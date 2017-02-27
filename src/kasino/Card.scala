@@ -23,7 +23,9 @@ case object Clubs extends Suit('C') { override def toString = "Clubs" }
 //This immutable singleton object represents the suit Hearts. It is one of the four predefined instances of class `Suit`.
 case object Hearts extends Suit('H') { override def toString = "Hearts" }
 
-
+//The class Card represent a single playing card in a deck of cards.
+//A card has two values attached to it, a value representing it's face value 
+//and a suit representing it's suit.
 class Card(value: Int, suit: Suit) {
   if (value < 1 || value > 13) {
     throw new IllegalArgumentException("Illegal card value.")

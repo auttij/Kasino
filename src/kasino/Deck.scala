@@ -35,11 +35,11 @@ class Deck(seed: Int) {
   
   //deal a certain amount of cards from the deck
   def deal(amount: Int): Seq[Card] = {
-    if (amount > cards.size) {           //if there aren't enought cards in the deck -> fail to deal enough cards
+    if (amount > cards.size) {           //if there aren't enought cards in the deck, throw an exception
       throw new IllegalArgumentException("tried to deal too many cards from deck.")
     }
     
-    if (amount > 0) {
+    if (amount > 0) {                    //if the amount is negative, throw an exception
       throw new IllegalArgumentException("tried to deal a negative amount of cards from deck.")
     }
     
