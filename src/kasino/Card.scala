@@ -1,62 +1,75 @@
 package kasino
 
-abstract class Suit (val suit: Char) {
+//The class Suit represents a suit of a playing card
+//There are exactly four instances of this class: `Spades`, `Diamonds`, `Clubs` and `Hearts`.
+//All the Suit objects are immutable.
+
+//Each object has a toString method that returns a textual representation of the Suits name
+abstract class Suit(val suit: Char) {
   def toString: String
-  
+
 }
 
-case object Spades extends Suit('S') {
-  override def toString = " of Spades"
-}
+//The following objects represents each of the suits in a deck of cards.
+//This immutable singleton object represents the suit Spades. It is one of the four predefined instances of class `Suit`.
+case object Spades extends Suit('S') { override def toString = "Spades" }
 
-case object Diamonds extends Suit('D') {
-  override def toString = " of Diamonds"
-}
+//This immutable singleton object represents the suit Diamonds. It is one of the four predefined instances of class `Suit`.
+case object Diamonds extends Suit('D') { override def toString = "Diamonds" }
 
-case object Clubs extends Suit('C') {
-  override def toString = " of Clubs"
-}
+//This immutable singleton object represents the suit Clubs. It is one of the four predefined instances of class `Suit`.
+case object Clubs extends Suit('C') { override def toString = "Clubs" }
 
-case object Hearts extends Suit('H') {
-  override def toString = " of Hearts"
-}
+//This immutable singleton object represents the suit Hearts. It is one of the four predefined instances of class `Suit`.
+case object Hearts extends Suit('H') { override def toString = "Hearts" }
 
 
+class Card(value: Int, suit: Suit) {
+  if (value < 1 || value > 13) {
+    throw new IllegalArgumentException("Illegal card value.")
+  }
 
-class Card (value: Int, suit: Suit) {
-    
   override def toString = suit.suit + value.toString
-  
-  def toText = value match {
-    case 1 => "Ace" + suit
-    case 2 => "Two" + suit
-    case 3 => "Three" + suit
-    case 4 => "Four" + suit
-    case 5 => "Five" + suit
-    case 6 => "Six" + suit
-    case 7 => "Seven" + suit
-    case 8 => "Eight" + suit
-    case 9 => "Nine" + suit
-    case 10 => "Ten" + suit
-    case 11 => "Jack" + suit
-    case 12 => "Queen" + suit
-    case 13 => "King" + suit
-    case _ => "illegal value"
+
+  //returns a textual representation of the card
+  //for example "Ace of Spades", "Queen of Hearts", "Two of Diamonds"
+  def toText = {
+    val t = value match {
+      case 1  => "Ace"
+      case 2  => "Two"
+      case 3  => "Three"
+      case 4  => "Four"
+      case 5  => "Five"
+      case 6  => "Six"
+      case 7  => "Seven"
+      case 8  => "Eight"
+      case 9  => "Nine"
+      case 10 => "Ten"
+      case 11 => "Jack"
+      case 12 => "Queen"
+      case 13 => "King"
+    }
+
+    t + " of " + suit
   }
-  
+
+  //returns the value of the card as integer, as it is on the table in a game of Casino. 
   def tableValue = value
-  
+
+  //returns the value of the card as an integer, when it's in the players hand
+  //for most of the cards this is their face value but there are a few exceptions
   def handValue = value match {
-    case 2 if (suit == Spades) => 15
-    case 10 if (suit == Diamonds) => 16
-    case 1 => 14
-    case _ => value
+    case 2 if (suit == Spades)    => 15 //if the card is the Two of Spades, handValue is 15
+    case 10 if (suit == Diamonds) => 16 //if the card is the Ten of Diamonds, handValue is 16
+    case 1                        => 14 //if the card is any Ace, handValue is 14
+    case _                        => value //for all other cards their handValue is their face value
   }
-  
+
+  //returns the value of the card as an integer, that represents it's value in the game's scoring system  
   def pointValue = value match {
-    case 2 if (suit == Spades) => 1
-    case 10 if (suit == Diamonds) => 2
-    case 1 => 1
-    case _ => 0
+    case 2 if (suit == Spades)    => 1 //if the card is the Two of Spades, it's worth 1 point
+    case 10 if (suit == Diamonds) => 2 //if the card is the Ten of Diamonds, it's worth 2 points
+    case 1                        => 1 //if the card is an Ace, it's worth 1 point
+    case _                        => 0 //other cards aren't worth points
   }
 }
