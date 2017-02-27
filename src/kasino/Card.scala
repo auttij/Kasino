@@ -52,4 +52,11 @@ class Card (value: Int, suit: Suit) {
     case 1 => 14
     case _ => value
   }
+  
+  def pointValue = value match {
+    case 2 if (suit == Spades) => 1
+    case 10 if (suit == Diamonds) => 2
+    case 1 => 1
+    case _ => 0
+  }
 }
