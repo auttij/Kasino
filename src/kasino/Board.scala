@@ -32,10 +32,18 @@ object Board {
     var temp = Buffer[Card]()
     cards.foreach(c => temp += c)
     var combinations = Buffer[Buffer[Card]]()
-
+    
     temp = temp.filter(x => x.tableValue <= c.handValue)
     findCombinations(c, (0, Buffer()), temp, combinations)
-    combineCombinations(combinations)
+    val choices = combineCombinations(combinations)
+    if (!choices.isEmpty) choices.foreach( x => x += c)
+    choices
+  }
+  
+  //removesa given list of cards from the table, and returns the removed cards
+  def removeCards(in: Buffer[Card]): Buffer[Card] = {
+    cards = cards diff in
+    in
   }
 
   //finds the possible combinations of cards that can be picked up from the board, that amount to the given card

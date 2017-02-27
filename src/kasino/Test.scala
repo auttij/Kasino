@@ -2,15 +2,24 @@ package kasino
 
 object Test extends App {
 
-  val deck = new Deck(1)
+  val deck = new Deck(2)
   deck.initialize
   deck.shuffle()
-
+  
+  val cards = deck.deal(8)
+  val c = new Card(7, Spades)
+  
   val board = Board
   board.clear
-  board.addCards(deck.deal(8))
+  board.addCards(cards)
 
-  val combinations = board.playCard(new Card(7, Spades))
-  println(combinations)
+  println("played card: " + c + s"  (tableValue = ${c.tableValue})")
+  println("cards: " + cards)
+  
+  val choices = board.playCard(c)
+  println("choices: " + choices)
+  
+  board.removeCards(choices(0))
+  println(board.cards)
   
 }
