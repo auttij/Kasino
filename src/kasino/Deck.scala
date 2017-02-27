@@ -31,12 +31,16 @@ class Deck(seed: Int) {
   }
   
   //Shuffles the deck
-  def shuffle = cards = myRand.shuffle(cards)
+  def shuffle() = cards = myRand.shuffle(cards)
   
   //deal a certain amount of cards from the deck
   def deal(amount: Int): Seq[Card] = {
     if (amount > cards.size) {           //if there aren't enought cards in the deck -> fail to deal enough cards
       throw new IllegalArgumentException("tried to deal too many cards from deck.")
+    }
+    
+    if (amount > 0) {
+      throw new IllegalArgumentException("tried to deal a negative amount of cards from deck.")
     }
     
     val dealt = cards.slice(0, amount)   //create a new Buffer with the first <amount> cards from the cards-buffer
