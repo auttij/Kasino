@@ -35,7 +35,7 @@ class Card(value: Int, suit: Suit) {
 
   //returns a textual representation of the card
   //for example "Ace of Spades", "Queen of Hearts", "Two of Diamonds"
-  def toText = {
+  def toText: String = {
     val t = value match {
       case 1  => "Ace"
       case 2  => "Two"
@@ -56,11 +56,11 @@ class Card(value: Int, suit: Suit) {
   }
 
   //returns the value of the card as integer, as it is on the table in a game of Casino. 
-  def tableValue = value
+  def tableValue: Int = value
 
   //returns the value of the card as an integer, when it's in the players hand
   //for most of the cards this is their face value but there are a few exceptions
-  def handValue = value match {
+  def handValue: Int = value match {
     case 2 if (suit == Spades)    => 15 //if the card is the Two of Spades, handValue is 15
     case 10 if (suit == Diamonds) => 16 //if the card is the Ten of Diamonds, handValue is 16
     case 1                        => 14 //if the card is any Ace, handValue is 14
@@ -68,7 +68,7 @@ class Card(value: Int, suit: Suit) {
   }
 
   //returns the value of the card as an integer, that represents it's value in the game's scoring system  
-  def pointValue = value match {
+  def pointValue: Int = value match {
     case 2 if (suit == Spades)    => 1 //if the card is the Two of Spades, it's worth 1 point
     case 10 if (suit == Diamonds) => 2 //if the card is the Ten of Diamonds, it's worth 2 points
     case 1                        => 1 //if the card is an Ace, it's worth 1 point

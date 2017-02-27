@@ -35,7 +35,7 @@ class Deck(seed: Int) {
   def shuffle() = cards = myRand.shuffle(cards)
   
   //deal a certain amount of cards from the deck
-  def deal(amount: Int): Seq[Card] = {
+  def deal(amount: Int): Buffer[Card] = {
     if (amount > cards.size) {           //if there aren't enought cards in the deck, throw an exception
       throw new IllegalArgumentException("tried to deal too many cards from deck.")
     }
