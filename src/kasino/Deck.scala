@@ -3,6 +3,7 @@ package kasino
 import scala.collection.mutable.Buffer
 import scala.util.Random
 
+//Represents a card of playing Cards. Starts out empty and needs to be initialized to add 1 of each card.
 class Deck(seed: Int) {
   //Creates a random for the shuffling to use. Can use a seed but it's for testing purposes
   private val myRand = if (seed == 0) new Random() else new Random(seed) 
@@ -25,7 +26,7 @@ class Deck(seed: Int) {
     
     for (s <- Suits.indices) { //go through suits
       for (v <- 1 to 13) {     //go through all values 1-13
-        addCard(v,Suits(s))    //add card
+        addCard(v, Suits(s))    //add card
       }
     }
   }
@@ -39,7 +40,7 @@ class Deck(seed: Int) {
       throw new IllegalArgumentException("tried to deal too many cards from deck.")
     }
     
-    if (amount > 0) {                    //if the amount is negative, throw an exception
+    if (amount < 0) {                    //if the amount is negative, throw an exception
       throw new IllegalArgumentException("tried to deal a negative amount of cards from deck.")
     }
     
