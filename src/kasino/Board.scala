@@ -40,7 +40,7 @@ object Board {
     choices
   }
   
-  //removesa given list of cards from the table, and returns the removed cards
+  //removes a given list of cards from the table, and returns the removed cards
   def removeCards(in: Buffer[Card]): Buffer[Card] = {
     cards = cards diff in
     in
