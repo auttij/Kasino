@@ -30,7 +30,7 @@ object Test extends App {
 ////  println(kasino.rounds)
 //
   
-  val kasino = new Kasino(3, "falarikae")
+  val kasino = new Kasino(5, "falarikae")
   kasino.newWholeGame()
   
   }
