@@ -8,15 +8,21 @@ import scala.util.Random
 abstract class Player(val name: String) {
 
   //contains 0-4 cards that are in the players hand.
-  private val hand = Buffer[Card]()
+  val hand = Buffer[Card]()
   
   //tells the size of the hand for Bots
-  val handSize = this.hand.size
+  def handSize = hand.length
 
   //contains the cards the player has collected. Used when calculating points at the end of a round.
   private val pile = Buffer[Card]()
 
-  def addToPile(in: Buffer[Card]) = { pile ++= in }
+  def decideCard: Int
+  def decideSelection(in: Buffer[Buffer[Card]]): Int
+  
+  def addToPile(in: Buffer[Card]) = {
+    pile ++= in
+    in
+  }
 
   def emptyPile(): Buffer[Card] = {
     val temp = Buffer[Card]()
@@ -42,11 +48,17 @@ abstract class Player(val name: String) {
 }
 
 class HumanPlayer(name: String) extends Player(name) {
-
+    def decideCard = new Random().nextInt(this.handSize)
+    def decideSelection(in: Buffer[Buffer[Card]]) = new Random().nextInt(in.size)
 }
 
 class Bot(name: String) extends Player(name) {
+    val rand = new Random()
     def decideCard = new Random().nextInt(this.handSize)
+    
+    def decideSelection(in: Buffer[Buffer[Card]]) = {
+      in.zipWithIndex.maxBy( _._1.map( _.pointValue).sum )._2
+    }
 }
 
 object Bot {
