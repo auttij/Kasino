@@ -22,7 +22,7 @@ class Deck(seed: Int) {
   //Creates a new deck that contains all the suits going ace -> two -> ... -> king
   //Suits are in order, defined by the Suits-vector
   def initialize() =  {
-    cards = Buffer[Card]()
+    cards.clear
     
     for (s <- Suits.indices) { //go through suits
       for (v <- 1 to 13) {     //go through all values 1-13

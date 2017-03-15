@@ -19,7 +19,13 @@ object Test extends App {
   val choices = board.playCard(c)
   println("choices: " + choices)
   
-  board.removeCards(choices(0))
+  val pelaaja = new HumanPlayer("testi")
+  pelaaja.addToPile(board.removeCards(choices(0)))
   println(board.cards)
   
+  println(pelaaja.getPoints)
+  
+  val kasino = new Kasino(8, "falarikae")
+  println(kasino.players.map(_.name))
+  println(kasino.rounds)
 }
