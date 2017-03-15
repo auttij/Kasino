@@ -107,14 +107,20 @@ class Kasino(opponents: Int, playerName: String) {
     val points = for (i <- players) yield i.getPoints
     val mostSpades = points.map(_._2).zipWithIndex.maxBy(_._1)._2 //the index of the player with most Spades
     val mostCards = points.map(_._3).zipWithIndex.maxBy(_._1)._2 //the index of the player with most Cards
+    val temp = for (i <- points.zipWithIndex) yield (scores(i._2) + i._1._1)
     scores = for {
-      i <- points.zipWithIndex;
+      i <- temp.zipWithIndex;
       val x: Int = i match {
-        case i if (i._2 == mostSpades & i._2 == mostCards) => 3 + scores(i._2) + i._1._1
-        case i if (i._2 == mostSpades) => 2 + scores(i._2) + i._1._1
-        case i if (i._2 == mostCards) => 1 + scores(i._2) + i._1._1
-        case _ => scores(i._2) + i._1._1
+        case i if (i._2 == mostSpades & i._2 == mostCards & i._2 == lastPickup) => 4 + temp(i._2)
+        case i if (i._2 == mostCards & i._2 == lastPickup) => 2 + temp(i._2)
+        case i if (i._2 == mostSpades & i._2 == lastPickup) => 3 + temp(i._2)
+        case i if (i._2 == mostSpades & i._2 == mostCards) => 3 + temp(i._2)
+        case i if (i._2 == mostSpades) => 2 + temp(i._2)
+        case i if (i._2 == mostCards) => 1 + temp(i._2)
+        case i if (i._2 == lastPickup) => 1 + temp(i._2)
+        case _ => temp(i._2)
       }
     } yield x
+
   }
 }
