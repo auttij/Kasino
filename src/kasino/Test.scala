@@ -18,8 +18,10 @@ object Test extends App {
   
   val choices = board.playCard(c)
   println("choices: " + choices)
+  println(choices.map(_.map(_.toText)))
   
   board.removeCards(choices(0))
   println(board.cards)
+  println(board.cards.map( _.toText))
   
 }
