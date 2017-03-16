@@ -26,7 +26,7 @@ case object Hearts extends Suit('H') { override def toString = "Hearts" }
 //The class Card represent a single playing card in a deck of cards.
 //A card has two values attached to it, a value representing it's face value 
 //and a suit representing it's suit.
-class Card(value: Int, suit: Suit) {
+class Card(value: Int, val suit: Suit) {
   if (value < 1 || value > 13) {
     throw new IllegalArgumentException("Illegal card value.")
   }

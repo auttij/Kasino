@@ -20,8 +20,7 @@ object Board {
   //used at the end of a game, after the last player has played his card.
   //the cards are returned to the player who last collected cards from the table
   def collectAll(): Buffer[Card] = {
-    val temp = Buffer[Card]()
-    cards.foreach(c => temp += c)
+    val temp = for (i <- cards) yield i
     cards.clear
     temp
   }
@@ -29,11 +28,9 @@ object Board {
   //plays a card to the game board.
   //returns a Buffer that contains Buffers, that contain selections of cards that can be picked up.
   def playCard(c: Card) = {
-    var temp = Buffer[Card]()
-    cards.foreach(c => temp += c)
-    var combinations = Buffer[Buffer[Card]]()
+    val temp: Buffer[Card] = for (i <- cards if ( i.tableValue <= c.handValue )) yield  i
+    val combinations = Buffer[Buffer[Card]]()
     
-    temp = temp.filter(x => x.tableValue <= c.handValue)
     findCombinations(c, (0, Buffer()), temp, combinations)
     val choices = combineCombinations(combinations)
     if (!choices.isEmpty) choices.foreach( x => x += c)
@@ -72,17 +69,16 @@ object Board {
   }
 
   private def combineCombinations(in: Buffer[Buffer[Card]]): Buffer[Buffer[Card]] = {
-    var out = Buffer[Buffer[Card]]()
-    in.foreach(x => out += combineBuffers(x, in))
+    val out = for (i <- in) yield combineBuffers(i, in)   
     out.map(_.sortWith(_.toString < _.toString)).toSet.toBuffer
   }
 
-  private def combineBuffers(in: Buffer[Card], left: Buffer[Buffer[Card]]): Buffer[Card] = {
-    if (left.size == 0) {
+  private def combineBuffers(in: Buffer[Card], remaining: Buffer[Buffer[Card]]): Buffer[Card] = {
+    if (remaining.size == 0) {
       in
     } else {
-      val temp = if (in.intersect(left(0)).isEmpty) in.union(left(0)) else in
-      combineBuffers(temp, left.drop(1))
+      val temp = if (in.intersect(remaining(0)).isEmpty) in.union(remaining(0)) else in
+      combineBuffers(temp, remaining.drop(1))
     }
   }
 
