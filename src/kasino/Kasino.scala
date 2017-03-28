@@ -9,12 +9,16 @@ class Kasino(opponents: Int, playerName: String) {
   private val deck = new Deck(0)
   private val board = Board
   private val players: Seq[Player] = Seq(new HumanPlayer(playerName)) ++ (for (i <- 0 until opponents) yield Bot(i))
-  private var scores: Seq[Int] = Seq.fill(players.length)(0)
+  private val scores = Scores(this, players.size)
   private val rounds = 48 / (players.length * 4) //tells the amount of rounds that will be played
   private var gameOver = false
   private var turnIndex = 0 //stepper
   private var lastPickup = 0
 
+  def returnPlayers = this.players
+  def returnLastPickup = this.lastPickup
+
+  //main game loop that ends when atleast one player has 16 or more points
   def newWholeGame() = {
     while (!gameOver) {
       println("new game started!")
@@ -24,23 +28,31 @@ class Kasino(opponents: Int, playerName: String) {
     gameEnd
   }
 
+  //changes the player who is currently playing to the next player
+  def changeTurn() = {
+    turnIndex = (turnIndex + 1) % players.length
+  }
+
+  //did the game end? if so gameOver = true
+  private def didGameEnd() = {
+    if (scores.isGameOver) gameOver = true
+  }
+
+  //once the game has ended, this method gets called
+  //prints out the winner/winners
   private def gameEnd() = {
-    val maxScore = scores.max
-    val winners = scores.zipWithIndex.filter(_._1 == maxScore).map(_._2)
+    val winners = scores.getWinners
     val out = if (winners.length == 1) {
       s"The winner is ${players(winners(0)).name}!"
     } else {
       val temp = for (i <- winners) yield (players(i).name)
       s"The winners are ${temp.mkString(",")}"
     }
-    
+
     println(out)
   }
 
-  private def didGameEnd() = {
-    gameOver = scores.max >= 16
-  }
-
+  //start a new game (a game is a single deck played through)
   def newGame() = {
     deck.initialize
     deck.shuffle
@@ -51,97 +63,77 @@ class Kasino(opponents: Int, playerName: String) {
         players(i).addCards(deck.deal(4))
       }
 
-      
       for (i <- 0 until 4) {
-        players.foreach( x => playTurn)
+        players.foreach(x => playTurn)
       }
     }
-    
+    roundEnd
+  }
+
+  //clearing the board and deck once the deck has been played through
+  def roundEnd() = {
     players(lastPickup).addToPile(Board.collectAll)
     players(lastPickup).addToPile(deck.collectAll)
-    updatePoints
+    scores.updatePoints
     didGameEnd
-    println((players.map( _.name ) zip scores).mkString(", "))
+    println(scores.scoresWithIndex.map(x => (players(x._1).name, x._2)).mkString(", "))
   }
 
   def playTurn() = {
-    val player = players(turnIndex)
+    val player = players(turnIndex) //the player in turn
     val in =
-      if (turnIndex == 0) {
+      if (turnIndex == 0) { //if turnIndex is 0 == it's a human player
         readLine(
-            "Cards on the table are: " + board.cards.map( _.toString()).mkString(", ") + "\n" + 
-            "Your cards are: " + player.hand.map( _.toString()).mkString(", ") + "\n" +
+          "Cards on the table are: " + board.cards.map(_.toString()).mkString(", ") + "\n" +
+            "Your cards are: " + player.hand.map(_.toString()).mkString(", ") + "\n" +
             "Your choice: ").toInt
-      } else {
+      } else { //otherwise it's a bot and decides the card without extra info
         player.decideCard
       }
-    val card = player.playCard(in)
-    val choices = Board.playCard(card)
-    
-    val choice = if (choices.isEmpty) {
-      Board.addCards(Seq(card))
-      Buffer[Card]()
-      
-    } else if (choices.size == 1) {
-      val cards = Board.removeCards(choices(0))
-      player.addToPile(cards)
-      cards
-      
-    } else {
-      val choice =  if (turnIndex == 0) {
-        readLine("choices: " + choices.map( _.map( _.toString)) + "\nYour choice: " ).toInt
-      } else {
-        player.decideSelection(choices)
+
+    val card = player.playCard(in) //the card that will be played
+    val choices = Board.playCard(card) //creates choices of what can be picked up
+
+    val choice =
+      if (choices.isEmpty) {  //if nothing can be picked up...
+        Board.addCards(Seq(card))  //play the card to the table
+        Buffer[Card]()
+
+      } else if (choices.size == 1) {  //if there is only one choice..
+        val cards = Board.removeCards(choices(0))  //the card that can be picked up are automatically picked up..
+        player.addToPile(cards)  //and added to the players pile
+        cards
+
+      } else {  //if there is a choice that has to be made...
+        val choice = if (turnIndex == 0) {  //ask the player which cards they want
+          readLine("choices: " + choices.map(_.map(_.toString)) + "\nYour choice: ").toInt
+        } else {  //or allow the bot to select
+          player.decideSelection(choices)
+        }
+        
+        //the cards are then removed from the board and added to the players pile
+        val cards = Board.removeCards(choices(choice))
+        player.addToPile(cards)
+        cards
       }
-      val cards = Board.removeCards(choices(choice))
-      player.addToPile(cards)
-      cards
-    }
     
+    //if the player picked something up, they're the player who last picked something up
     if (!choice.isEmpty) lastPickup = turnIndex
-    mokki
-    
-    changeTurn
-    val part1 = player.name + " plays: " +card.toText
-    val part2 = if (!choice.isEmpty) { ", gets: "  + choice.map( _.toString).mkString(", ") } else ""
+    mokki  //check if the board was cleared
+
+    changeTurn  //change turn
+    //placeholder text so the game is easier to play without a GUI
+    val part1 = player.name + " plays: " + card.toText
+    val part2 = if (!choice.isEmpty) { ", gets: " + choice.map(_.toString).mkString(", ") } else ""
     println(part1 + part2)
   }
 
+  //checks if the board has been cleared and if so, gives the player who cleared it a point
   def mokki() = {
     if (Board.cards.isEmpty) {
-      scores = for {i <- scores.zipWithIndex 
-        val x: Int = i match {
-          case i if (i._2 == turnIndex) => i._1 + 1
-          case _ => i._1
-        }
-      } yield x
+      scores.addOne(turnIndex)
       println(players(turnIndex).name + " gets a mökki.")
     }
   }
-  
-  def changeTurn() = {
-    turnIndex = (turnIndex + 1) % players.length
-  }
 
-  private def updatePoints() = {
-    val points = for (i <- players) yield i.getPoints
-    val mostSpades = points.map(_._2).zipWithIndex.maxBy(_._1)._2 //the index of the player with most Spades
-    val mostCards = points.map(_._3).zipWithIndex.maxBy(_._1)._2 //the index of the player with most Cards
-    val temp = for (i <- points.zipWithIndex) yield (scores(i._2) + i._1._1)
-    
-    scores = for {
-      i <- temp.zipWithIndex;
-      val x: Int = i match {
-        case i if (i._2 == mostSpades & i._2 == mostCards & i._2 == lastPickup) => 4 + temp(i._2)
-        case i if (i._2 == mostCards & i._2 == lastPickup) => 2 + temp(i._2)
-        case i if (i._2 == mostSpades & i._2 == lastPickup) => 3 + temp(i._2)
-        case i if (i._2 == mostSpades & i._2 == mostCards) => 3 + temp(i._2)
-        case i if (i._2 == mostSpades) => 2 + temp(i._2)
-        case i if (i._2 == mostCards) => 1 + temp(i._2)
-        case i if (i._2 == lastPickup) => 1 + temp(i._2)
-        case _ => temp(i._2)
-      }
-    } yield x
-
-  }
 }
