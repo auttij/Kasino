@@ -2,7 +2,7 @@ package kasino
 
 import scala.collection.mutable.Buffer
 
-class Kasino(opponents: Int, playerName: String) {
+class KasinoText(opponents: Int, playerName: String) {
   require(opponents >= 1, "there must be more than 2 players in the game")
   require(opponents <= 11, "there are only enough cards for 12 players")
 
@@ -33,7 +33,7 @@ class Kasino(opponents: Int, playerName: String) {
       val temp = for (i <- winners) yield (players(i).name)
       s"The winners are ${temp.mkString(",")}"
     }
-    
+
     println(out)
   }
 
@@ -51,45 +51,61 @@ class Kasino(opponents: Int, playerName: String) {
         players(i).addCards(deck.deal(4))
       }
 
-      
       for (i <- 0 until 4) {
-        players.foreach( x => playTurn)
+        players.foreach(x => playTurn)
       }
     }
-    
+
     players(lastPickup).addToPile(Board.collectAll)
     players(lastPickup).addToPile(deck.collectAll)
     updatePoints
     didGameEnd
-    println((players.map( _.name ) zip scores).mkString(", "))
+    println((players.map(_.name) zip scores).mkString(", "))
   }
 
   def playTurn() = {
     val player = players(turnIndex)
     val in =
       if (turnIndex == 0) {
-        readLine(
-            "Cards on the table are: " + board.cards.map( _.toString()).mkString(", ") + "\n" + 
-            "Your cards are: " + player.hand.map( _.toString()).mkString(", ") + "\n" +
-            "Your choice: ").toInt
+        //        readLine(
+        //            "Cards on the table are: " + board.cards.map( _.toString()).mkString(", ") + "\n" + 
+        //            "Your cards are: " + player.hand.map( _.toString()).mkString(", ") + "\n" +
+        //            "Your choice: ").toInt
+        val text = s"Cards on the table are: ${board.cards.map(_.toString()).mkString(", ")}\n" +
+          s"Your cards are: ${player.hand.map(_.toString()).mkString(", ")}"
+        val text2 = "Your choice: "
+        def text3: String = s"Your choice (0-${player.handSize - 1}): "
+        println(text)
+        var ok = true
+        var output = 0
+        do {
+          val out = if (ok) {
+            readLine(text2)
+          } else {
+            readLine(text3)
+          }
+          ok = (!out.isEmpty) && (out < player.handSize.toString) && (out >= "0")
+          if (ok) output = out.toInt
+        } while (!ok)
+        output
       } else {
         player.decideCard
       }
     val card = player.playCard(in)
     val choices = Board.playCard(card)
-    
+
     val choice = if (choices.isEmpty) {
       Board.addCards(Seq(card))
       Buffer[Card]()
-      
+
     } else if (choices.size == 1) {
       val cards = Board.removeCards(choices(0))
       player.addToPile(cards)
       cards
-      
+
     } else {
-      val choice =  if (turnIndex == 0) {
-        readLine("choices: " + choices.map( _.map( _.toString)) + "\nYour choice: " ).toInt
+      val choice = if (turnIndex == 0) {
+        readLine("choices: " + choices.map(_.map(_.toString)) + "\nYour choice: ").toInt
       } else {
         player.decideSelection(choices)
       }
@@ -97,28 +113,29 @@ class Kasino(opponents: Int, playerName: String) {
       player.addToPile(cards)
       cards
     }
-    
+
     if (!choice.isEmpty) lastPickup = turnIndex
     mokki
-    
+
     changeTurn
-    val part1 = player.name + " plays: " +card.toText
-    val part2 = if (!choice.isEmpty) { ", gets: "  + choice.map( _.toString).mkString(", ") } else ""
+    val part1 = player.name + " plays: " + card.toText
+    val part2 = if (!choice.isEmpty) { ", gets: " + choice.map(_.toString).mkString(", ") } else ""
     println(part1 + part2)
   }
 
   def mokki() = {
     if (Board.cards.isEmpty) {
-      scores = for {i <- scores.zipWithIndex 
+      scores = for {
+        i <- scores.zipWithIndex
         val x: Int = i match {
           case i if (i._2 == turnIndex) => i._1 + 1
-          case _ => i._1
+          case _                        => i._1
         }
       } yield x
       println(players(turnIndex).name + " gets a mökki.")
     }
   }
-  
+
   def changeTurn() = {
     turnIndex = (turnIndex + 1) % players.length
   }
@@ -128,7 +145,7 @@ class Kasino(opponents: Int, playerName: String) {
     val mostSpades = points.map(_._2).zipWithIndex.maxBy(_._1)._2 //the index of the player with most Spades
     val mostCards = points.map(_._3).zipWithIndex.maxBy(_._1)._2 //the index of the player with most Cards
     val temp = for (i <- points.zipWithIndex) yield (scores(i._2) + i._1._1)
-    
+
     scores = for {
       i <- temp.zipWithIndex;
       val x: Int = i match {
