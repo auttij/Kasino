@@ -24,6 +24,9 @@ class KasinoText(opponents: Int, playerName: String) {
     gameEnd
   }
 
+  def returnPlayers = this.players
+  def returnLastPickup = this.lastPickup
+  
   private def gameEnd() = {
     val maxScore = scores.max
     val winners = scores.zipWithIndex.filter(_._1 == maxScore).map(_._2)
