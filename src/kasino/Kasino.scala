@@ -2,7 +2,7 @@ package kasino
 
 import scala.collection.mutable.Buffer
 
-class Kasino(opponents: Int, playerName: String) {
+class KasinoText(opponents: Int, playerName: String) {
   require(opponents >= 1, "there must be more than 2 players in the game")
   require(opponents <= 11, "there are only enough cards for 12 players")
 
@@ -29,14 +29,11 @@ class Kasino(opponents: Int, playerName: String) {
   }
 
   //changes the player who is currently playing to the next player
-  def changeTurn() = {
-    turnIndex = (turnIndex + 1) % players.length
-  }
+  def changeTurn() = turnIndex = (turnIndex + 1) % players.length
 
   //did the game end? if so gameOver = true
-  private def didGameEnd() = {
-    if (scores.isGameOver) gameOver = true
-  }
+  private def didGameEnd() = if (scores.isGameOver) gameOver = true
+  
 
   //once the game has ended, this method gets called
   //prints out the winner/winners
@@ -101,7 +98,7 @@ class Kasino(opponents: Int, playerName: String) {
           if (ok) output = out.toInt
         } while (!ok)
         output
-        
+
       } else { //otherwise it's a bot and decides the card without extra info
         player.decideCard
       }
@@ -110,33 +107,33 @@ class Kasino(opponents: Int, playerName: String) {
     val choices = Board.playCard(card) //creates choices of what can be picked up
 
     val choice =
-      if (choices.isEmpty) {  //if nothing can be picked up...
-        Board.addCards(Seq(card))  //play the card to the table
+      if (choices.isEmpty) { //if nothing can be picked up...
+        Board.addCards(Seq(card)) //play the card to the table
         Buffer[Card]()
 
-      } else if (choices.size == 1) {  //if there is only one choice..
-        val cards = Board.removeCards(choices(0))  //the card that can be picked up are automatically picked up..
-        player.addToPile(cards)  //and added to the players pile
+      } else if (choices.size == 1) { //if there is only one choice..
+        val cards = Board.removeCards(choices(0)) //the card that can be picked up are automatically picked up..
+        player.addToPile(cards) //and added to the players pile
         cards
 
-      } else {  //if there is a choice that has to be made...
-        val choice = if (turnIndex == 0) {  //ask the player which cards they want
+      } else { //if there is a choice that has to be made...
+        val choice = if (turnIndex == 0) { //ask the player which cards they want
           readLine("choices: " + choices.map(_.map(_.toString)) + "\nYour choice: ").toInt
-        } else {  //or allow the bot to select
+        } else { //or allow the bot to select
           player.decideSelection(choices)
         }
-        
+
         //the cards are then removed from the board and added to the players pile
         val cards = Board.removeCards(choices(choice))
         player.addToPile(cards)
         cards
       }
-    
+
     //if the player picked something up, they're the player who last picked something up
     if (!choice.isEmpty) lastPickup = turnIndex
-    mokki  //check if the board was cleared
+    mokki //check if the board was cleared
 
-    changeTurn  //change turn
+    changeTurn //change turn
     //placeholder text so the game is easier to play without a GUI
     val part1 = player.name + " plays: " + card.toText
     val part2 = if (!choice.isEmpty) { ", gets: " + choice.map(_.toString).mkString(", ") } else ""
