@@ -1,7 +1,7 @@
 package kasino
 import collection.mutable.ArrayBuffer
 
-class Scores (game: Kasino, count: Int) {
+class Scores (game: Game, count: Int) {
   private var scores: Array[Int] = Array.ofDim(count)
   
   def scoresWithIndex = scores.zipWithIndex.map( _.swap)
@@ -38,5 +38,5 @@ class Scores (game: Kasino, count: Int) {
 
 }
 object Scores {
-  def apply(game: Kasino, n: Int) = new Scores(game, n)
+  def apply(game: Game, n: Int) = new Scores(game, n)
 }

@@ -6,86 +6,53 @@ class KasinoText(opponents: Int, playerName: String) {
   require(opponents >= 1, "there must be more than 2 players in the game")
   require(opponents <= 11, "there are only enough cards for 12 players")
 
-  private val deck = new Deck(0)
-  private val board = Board
-  private val players: Seq[Player] = Seq(new HumanPlayer(playerName)) ++ (for (i <- 0 until opponents) yield Bot(i))
-  private val scores = Scores(this, players.size)
-  private val rounds = 48 / (players.length * 4) //tells the amount of rounds that will be played
-  private var gameOver = false
-  private var turnIndex = 0 //stepper
-  private var lastPickup = 0
-
-  def returnPlayers = this.players
-  def returnLastPickup = this.lastPickup
+  val g = new Game(opponents, playerName)
 
   //main game loop that ends when atleast one player has 16 or more points
   def newWholeGame() = {
-    while (!gameOver) {
-      println("new game started!")
+    println("New game started!")
+    while (g.gameOn) {
       newGame
-      changeTurn
+      g.changeTurn
     }
     gameEnd
   }
 
-  //changes the player who is currently playing to the next player
-  def changeTurn() = turnIndex = (turnIndex + 1) % players.length
+  //start a new game (a game is a single deck played through)
+  def newGame() = {
+    g.setup()
+    g.dealCards()
 
-  //did the game end? if so gameOver = true
-  private def didGameEnd() = if (scores.isGameOver) gameOver = true
-  
+    for (i <- 0 until 4) {
+      g.returnPlayers.foreach(x => playTurn)
+    }
+    g.roundEnd()
+  }
 
   //once the game has ended, this method gets called
   //prints out the winner/winners
-  private def gameEnd() = {
-    val winners = scores.getWinners
+  def gameEnd() = {
+    val winners = g.winners
     val out = if (winners.length == 1) {
-      s"The winner is ${players(winners(0)).name}!"
+      s"The winner is ${winners(0).name}!"
     } else {
-      val temp = for (i <- winners) yield (players(i).name)
-      s"The winners are ${temp.mkString(",")}"
+      s"The winners are ${winners.map(_.name).mkString(",")}"
     }
-
     println(out)
   }
 
-  //start a new game (a game is a single deck played through)
-  def newGame() = {
-    deck.initialize
-    deck.shuffle
-    board.addCards(deck.deal(4))
-
-    for (i <- 0 until rounds) {
-      for (i <- 0 until players.length) {
-        players(i).addCards(deck.deal(4))
-      }
-
-      for (i <- 0 until 4) {
-        players.foreach(x => playTurn)
-      }
-    }
-    roundEnd
-  }
-
-  //clearing the board and deck once the deck has been played through
-  def roundEnd() = {
-    players(lastPickup).addToPile(Board.collectAll)
-    players(lastPickup).addToPile(deck.collectAll)
-    scores.updatePoints
-    didGameEnd
-    println(scores.scoresWithIndex.map(x => (players(x._1).name, x._2)).mkString(", "))
-  }
-
   def playTurn() = {
-    val player = players(turnIndex) //the player in turn
+    val turn = g.turn
+    val player = g.returnPlayers(turn) //the player in turn
     val in =
-      if (turnIndex == 0) { //if turnIndex is 0 == it's a human player
+      if (turn == 0) { //if turnIndex is 0 == it's a human player
 
-        val text = s"Cards on the table are: ${board.cards.map(_.toString()).mkString(", ")}\n" +
+        val text = s"Cards on the table are: ${g.returnCards.map(_.toString()).mkString(", ")}\n" +
           s"Your cards are: ${player.hand.map(_.toString()).mkString(", ")}"
         val text2 = "Your choice: "
         def text3: String = s"Your choice (0-${player.handSize - 1}): "
         println(text)
+
         var ok = true
         var output = 0
         do {
@@ -100,7 +67,7 @@ class KasinoText(opponents: Int, playerName: String) {
         output
 
       } else { //otherwise it's a bot and decides the card without extra info
-        player.decideCard
+        g.playCard()
       }
 
     val card = player.playCard(in) //the card that will be played
@@ -117,7 +84,18 @@ class KasinoText(opponents: Int, playerName: String) {
         cards
 
       } else { //if there is a choice that has to be made...
-        val choice = if (turnIndex == 0) { //ask the player which cards they want
+        val choice = if (turn == 0) { //ask the player which cards they want
+
+          val text = "choices: " + choices.map(_.map(_.toString)) + "\nYour choice: "
+          var ok = true
+          var output = 0
+          do {
+            val out = readLine(text)
+            ok = (!out.isEmpty) && (out < choices.size.toString) && (out >= "0")
+            if (ok) output = out.toInt
+          } while (!ok)
+          output
+
           readLine("choices: " + choices.map(_.map(_.toString)) + "\nYour choice: ").toInt
         } else { //or allow the bot to select
           player.decideSelection(choices)
@@ -130,22 +108,15 @@ class KasinoText(opponents: Int, playerName: String) {
       }
 
     //if the player picked something up, they're the player who last picked something up
-    if (!choice.isEmpty) lastPickup = turnIndex
-    mokki //check if the board was cleared
+    if (!choice.isEmpty) g.changeLast
 
-    changeTurn //change turn
+    g.mokki //check if the board was cleared
+    g.changeTurn //change turn
+
     //placeholder text so the game is easier to play without a GUI
     val part1 = player.name + " plays: " + card.toText
     val part2 = if (!choice.isEmpty) { ", gets: " + choice.map(_.toString).mkString(", ") } else ""
     println(part1 + part2)
-  }
-
-  //checks if the board has been cleared and if so, gives the player who cleared it a point
-  def mokki() = {
-    if (Board.cards.isEmpty) {
-      scores.addOne(turnIndex)
-      println(players(turnIndex).name + " gets a mökki.")
-    }
   }
 
 }
