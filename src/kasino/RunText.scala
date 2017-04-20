@@ -2,7 +2,7 @@ package kasino
 
 object RunText extends App {
 
-  val text = "how many players do you want to play against? (1-11)\nSuggested amounts are 2, 3, 5 or 11\n"
+  val text = "how many players do you want to play against? (1-11)\nSuggested amounts are 2, 3 and 5\n"
   val text2 = "what is your name?\n"
   var ok = true
   var count = 3

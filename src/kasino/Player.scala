@@ -8,7 +8,8 @@ import scala.util.Random
 abstract class Player(val name: String) {
 
   //contains 0-4 cards that are in the players hand.
-  val hand = Buffer[Card]()
+  private val hand = Buffer[Card]()
+  def returnHand = this.hand
   
   //tells the size of the hand for Bots
   def handSize = hand.length

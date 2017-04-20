@@ -14,12 +14,14 @@ class KasinoText(opponents: Int, playerName: String) {
     while (g.gameOn) {
       newGame
       g.changeTurn
+      scores
     }
     gameEnd
   }
 
   //start a new game (a game is a single deck played through)
   def newGame() = {
+    println("New round started!")
     g.setup()
     g.dealCards()
 
@@ -41,6 +43,11 @@ class KasinoText(opponents: Int, playerName: String) {
     println(out)
   }
 
+  def scores = {
+    val scores = g.getPlayerScores
+    println("Current scores: " + scores.mkString(" ") + "\n")
+  }
+  
   def playTurn() = {
     val turn = g.turn
     val player = g.returnPlayers(turn) //the player in turn
@@ -48,7 +55,7 @@ class KasinoText(opponents: Int, playerName: String) {
       if (turn == 0) { //if turnIndex is 0 == it's a human player
 
         val text = s"Cards on the table are: ${g.returnCards.map(_.toString()).mkString(", ")}\n" +
-          s"Your cards are: ${player.hand.map(_.toString()).mkString(", ")}"
+          s"Your cards are: ${player.returnHand.map(_.toString()).mkString(", ")}"
         val text2 = "Your choice: "
         def text3: String = s"Your choice (0-${player.handSize - 1}): "
         println(text)
@@ -67,24 +74,21 @@ class KasinoText(opponents: Int, playerName: String) {
         output
 
       } else { //otherwise it's a bot and decides the card without extra info
-        g.playCard()
+        g.botPlayCard()
       }
 
-    val card = player.playCard(in) //the card that will be played
-    val choices = Board.playCard(card) //creates choices of what can be picked up
-
+    val card = g.playerCard(in)
+    var gotSelection = false
+    val choices = g.playCard(in)
     val choice =
-      if (choices.isEmpty) { //if nothing can be picked up...
-        Board.addCards(Seq(card)) //play the card to the table
-        Buffer[Card]()
-
+      if (choices.flatten.isEmpty) { //if nothing can be picked up...
+        Buffer()
+        
       } else if (choices.size == 1) { //if there is only one choice..
-        val cards = Board.removeCards(choices(0)) //the card that can be picked up are automatically picked up..
-        player.addToPile(cards) //and added to the players pile
-        cards
-
+        choices(0)
+        
       } else { //if there is a choice that has to be made...
-        val choice = if (turn == 0) { //ask the player which cards they want
+        val selection = if (turn == 0) { //ask the player which cards they want
 
           val text = "choices: " + choices.map(_.map(_.toString)) + "\nYour choice: "
           var ok = true
@@ -95,28 +99,25 @@ class KasinoText(opponents: Int, playerName: String) {
             if (ok) output = out.toInt
           } while (!ok)
           output
-
-          readLine("choices: " + choices.map(_.map(_.toString)) + "\nYour choice: ").toInt
+          
         } else { //or allow the bot to select
           player.decideSelection(choices)
         }
 
         //the cards are then removed from the board and added to the players pile
-        val cards = Board.removeCards(choices(choice))
-        player.addToPile(cards)
-        cards
+        g.pickupCards(choices(selection))
       }
 
     //if the player picked something up, they're the player who last picked something up
     if (!choice.isEmpty) g.changeLast
 
-    g.mokki //check if the board was cleared
+    val part3 = if (g.mokki) s"\n${player.name} clears the board!" else ""//check if the board was cleared
     g.changeTurn //change turn
 
-    //placeholder text so the game is easier to play without a GUI
+    //text for card pickup
     val part1 = player.name + " plays: " + card.toText
     val part2 = if (!choice.isEmpty) { ", gets: " + choice.map(_.toString).mkString(", ") } else ""
-    println(part1 + part2)
+    println(part1 + part2 + part3)
   }
 
 }
