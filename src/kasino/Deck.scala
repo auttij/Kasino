@@ -13,11 +13,14 @@ class Deck(seed: Int) {
 
   //Contains all the suits. Used by initialize to go through all the suits to make a complete deck.
   private val Suits = Vector[Suit](Spades, Diamonds, Clubs, Hearts)
-
+  
   //adds a card to the cards buffer
   private def addCard(value: Int, Suit: Suit) = {
     cards += new Card(value, Suit)
   }
+  
+  //adds a collection of cards to the deck, used when loading
+  def addCards(in: Seq[Card]) = in.foreach( x => cards += x)
 
   //Creates a new deck that contains all the suits going ace -> two -> ... -> king
   //Suits are in order, defined by the Suits-vector
@@ -54,4 +57,7 @@ class Deck(seed: Int) {
     cards.clear
     temp
   }
+  
+  //returns all the cards as text in the deck without changing the actual Buffer storing them.
+  def returnCards = this.cards.map(_.toString)
 }

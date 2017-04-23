@@ -16,6 +16,7 @@ abstract class Player(val name: String) {
 
   //contains the cards the player has collected. Used when calculating points at the end of a round.
   private val pile = Buffer[Card]()
+  def returnPile = this.pile.map( _.toString)
 
   def decideCard: Int
   def decideSelection(in: Buffer[Buffer[Card]]): Int
@@ -26,13 +27,10 @@ abstract class Player(val name: String) {
   }
 
   def emptyPile(): Buffer[Card] = {
-    val temp = Buffer[Card]()
-    temp ++= pile
+    val temp = for (i <- pile) yield i
     pile.clear
     temp
   }
-
-  def playCard(c: Card): Card = hand.remove(hand.indexOf(c))
 
   def playCard(index: Int): Card = hand.remove(index)
 

@@ -3,7 +3,7 @@ package kasino
 import scala.collection.mutable.Buffer
 
 //represents the game board in a cardgame where cards can be played.
-object Board {
+class Board() {
 
   var cards = Buffer[Card]() //Contains all the cards in the deck; Turn into private when done testing!
 
@@ -25,6 +25,9 @@ object Board {
     temp
   }
 
+  //returns all the cards as text in the deck without changing the actual Buffer storing them.
+  def returnCards = this.cards.map(_.toString)
+  
   //plays a card to the game board.
   //returns a Buffer that contains Buffers, that contain selections of cards that can be picked up.
   def playCard(c: Card) = {

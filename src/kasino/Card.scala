@@ -7,7 +7,6 @@ package kasino
 //Each object has a toString method that returns a textual representation of the Suits name
 abstract class Suit(val suit: Char) {
   def toString: String
-
 }
 
 //The following objects represents each of the suits in a deck of cards.

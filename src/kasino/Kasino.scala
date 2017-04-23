@@ -6,7 +6,9 @@ class KasinoText(opponents: Int, playerName: String) {
   require(opponents >= 1, "there must be more than 2 players in the game")
   require(opponents <= 11, "there are only enough cards for 12 players")
 
-  val g = new Game(opponents, playerName)
+  var board = new Board
+  var deck = new Deck(0)
+  val g = new Game(opponents, playerName, board, deck)
 
   //main game loop that ends when atleast one player has 16 or more points
   def newWholeGame() = {

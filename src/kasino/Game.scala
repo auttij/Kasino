@@ -2,9 +2,9 @@ package kasino
 
 import scala.collection.mutable.Buffer
 
-class Game(opponents: Int, playerName: String) {
-  private val deck = new Deck(0)
-  private val board = Board
+class Game(opponents: Int, val playerName: String, val board: Board, val deck: Deck) {
+//  private val deck = new Deck(0)
+//  private val board = Board
   private val players: Seq[Player] = Seq(new HumanPlayer(playerName)) ++ (for (i <- 0 until opponents) yield Bot(i))
   private val scores = Scores(this, players.size)
   private val rounds = 48 / (players.length * 4) //tells the amount of rounds that will be played
@@ -12,6 +12,7 @@ class Game(opponents: Int, playerName: String) {
   private var turnIndex = 0 //stepper
   private var lastPickup = 0
 
+  
   def turn = this.turnIndex
   def returnPlayers = this.players
   def returnLastPickup = this.lastPickup
@@ -36,14 +37,14 @@ class Game(opponents: Int, playerName: String) {
   def playCard(in: Int): Buffer[Buffer[Card]] = {
     val player = players(turnIndex)
     val card = player.playCard(in) //the card that will be played
-    val choices = Board.playCard(card) //creates choices of what can be picked up
+    val choices = board.playCard(card) //creates choices of what can be picked up
 
     if (choices.isEmpty) { //if nothing can be picked up...
-      Board.addCards(Seq(card)) //play the card to the table
+      board.addCards(Seq(card)) //play the card to the table
       Buffer(Buffer[Card]())
 
     } else if (choices.size == 1) { //if there is only one choice..
-      val cards = Board.removeCards(choices(0)) //the card that can be picked up are automatically picked up..
+      val cards = board.removeCards(choices(0)) //the card that can be picked up are automatically picked up..
       player.addToPile(cards) //and added to the players pile
       Buffer(cards)
 
@@ -52,14 +53,14 @@ class Game(opponents: Int, playerName: String) {
     }
   }
 
-  def getPlayerScores() = {
+  def getPlayerScores = {
     scores.scoresWithIndex.map( x => (players(x._1).name, x._2) )
   }
   
   //picks up the given cards from the Board
   def pickupCards(in: Buffer[Card]) = {
     val player = players(turnIndex)
-    val cards = Board.removeCards(in)
+    val cards = board.removeCards(in)
     player.addToPile(cards)
     cards
   }
@@ -84,15 +85,16 @@ class Game(opponents: Int, playerName: String) {
 
   //when a round ends (deck is empty) collect remaining cards and update points
   def roundEnd() = {
-    players(lastPickup).addToPile(Board.collectAll)
+    players(lastPickup).addToPile(board.collectAll)
     players(lastPickup).addToPile(deck.collectAll)
     scores.updatePoints
+    ChunkIO.saveGame(this)
     didGameEnd
   }
 
   //checks if the board has been cleared and if so, gives the player who cleared it a point
   def mokki(): Boolean = {
-    if (Board.cards.isEmpty) {
+    if (board.cards.isEmpty) {
       scores.addOne(turnIndex)
       true
     } else {

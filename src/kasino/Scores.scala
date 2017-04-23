@@ -20,7 +20,7 @@ class Scores (game: Game, count: Int) {
   }
   
   def updatePoints() = {
-    val lastPickup = game.returnLastPickup
+    val lastPickup = game.returnLastPickup //apparently lastPickup shouldn't give points like I'm used to...
     val players = game.returnPlayers
     val points = for (i <- players) yield i.getPoints             
     var newPoints = points.map( _._1).toArray  //a list containing all the points for each player gained this round
@@ -28,7 +28,7 @@ class Scores (game: Game, count: Int) {
     val mostSpades = points.map(_._2).zipWithIndex.maxBy(_._1)._2 //the index of the player with most Spades
     val mostCards = points.map(_._3).zipWithIndex.maxBy(_._1)._2  //the index of the player with most Cards
     //create an array of players that get points from last pickup, most cards and spades
-    val addPointsTo: Array[Int] = Array(lastPickup, mostCards, mostSpades, mostSpades)
+    val addPointsTo: Array[Int] = Array(mostCards, mostSpades, mostSpades) 
     addPointsTo.foreach(addOne)  //add one point to each of them
     
     for (ind <- 0 until count) {  //add points from other cards
