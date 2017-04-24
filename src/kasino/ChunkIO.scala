@@ -104,7 +104,8 @@ object ChunkIO {
         throw new CorruptedSaveFileException("Not enough hands or piles in save data")
       }
 
-      
+      game.loadTurnAndLast(turn, lastPickup)
+      game.loadScores(scores)
       
       game
     } catch {
@@ -147,9 +148,9 @@ object ChunkIO {
       ("END", "000"))
 
     val saveData = {
-      //val out = 
+      val out = 
         for (part <- chunks) yield part._1 + len(part._2) + part._2
-      //"KASINO" + out.mkString
+      "KASINO" ++ out
     }
 
     val fileName = "saveFile.txt"

@@ -13,6 +13,7 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
   private var lastPickup = 0
 
   
+  
   def turn = this.turnIndex
   def returnPlayers = this.players
   def returnLastPickup = this.lastPickup
@@ -26,6 +27,11 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
     for (i <- 0 until playerCount) {
       players(i).addCards(deck.deal(4))
     }
+  }
+  
+  def loadTurnAndLast(turn: Int, last: Int) = {
+    this.turnIndex = turn
+    this.lastPickup = last
   }
   
   def playerCard(in: Int) = players(turn).returnHand(in)
@@ -63,6 +69,10 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
     val cards = board.removeCards(in)
     player.addToPile(cards)
     cards
+  }
+  
+  def loadScores(in: Array[Int]) = {
+    scores.loadScores(in)
   }
   
   //get a card selection from the bot player in turn

@@ -35,6 +35,12 @@ class Scores (game: Game, count: Int) {
       scores(ind) += newPoints(ind) 
     }
   }
+  
+  def loadScores(in: Array[Int]) = {
+    for (ind <- in.indices) {
+      scores(ind) = in(ind)
+    }
+  }
 
 }
 object Scores {
