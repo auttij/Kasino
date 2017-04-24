@@ -11,8 +11,6 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
   private var gameOver = false
   private var turnIndex = 0 //stepper
   private var lastPickup = 0
-
-  
   
   def turn = this.turnIndex
   def returnPlayers = this.players
@@ -80,7 +78,7 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
 
   //changes the player who is currently playing to the next player
   def changeTurn() = turnIndex = (turnIndex + 1) % players.length
-
+  
   //did the game end? if so gameOver = true
   def didGameEnd() = if (scores.isGameOver) gameOver = true
 
@@ -93,6 +91,12 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
     board.addCards(deck.deal(4))
   }
 
+  def isRoundOver = {
+    val handSizes = for (player <- players) yield player.handSize
+    handSizes.min == 0
+  }
+  
+  
   //when a round ends (deck is empty) collect remaining cards and update points
   def roundEnd() = {
     players(lastPickup).addToPile(board.collectAll)
