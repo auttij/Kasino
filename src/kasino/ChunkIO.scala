@@ -1,14 +1,26 @@
 package kasino
 
+import scala.io.Source
 import java.io.Reader
 import java.util.Base64
 import java.nio.charset.StandardCharsets
 import java.io.PrintWriter
 import scala.collection.mutable.Buffer
 import java.io.IOException
+import java.io.StringReader
 
 object ChunkIO {
-
+  
+  
+  
+  def load: Game = {
+    val fileName = "saveFile.txt"
+    val input = for (line <- Source.fromFile(fileName).getLines()) yield line
+    val decoded = Helpers.B64decode(input.mkString)
+    val reader = new  StringReader(decoded)
+    loadGame(reader)
+  }
+  
   def loadGame(input: Reader): Game = {
     def handleChunk(chunkHeader: Array[Char]) = {
       val arr = new Array[Char](Helpers.extractChunkSize(chunkHeader))
@@ -58,9 +70,10 @@ object ChunkIO {
         Helpers.extractChunkName(chunkHeader) match {
           case "CMT" =>
             val comment = handleChunk(chunkHeader).mkString
-          case "OPP" => playerCount = handleChunk(chunkHeader).mkString.toInt
+          case "OPC" => playerCount = handleChunk(chunkHeader).mkString.toInt
           case "NAM" => playerName = handleChunk(chunkHeader).mkString
           case "TRN" => turn = handleChunk(chunkHeader).mkString.toInt
+          case "LST" => lastPickup = handleChunk(chunkHeader).mkString.toInt
           case "DCK" => deckChunk = handleChunk(chunkHeader).mkString
           case "BRD" => boardChunk = handleChunk(chunkHeader).mkString
           case "SCR" => scoreChunk = handleChunk(chunkHeader).mkString
@@ -100,8 +113,8 @@ object ChunkIO {
         pileIndex += 1
       }
       
-      if (opponentCount != handIndex || opponentCount != pileIndex) {
-        throw new CorruptedSaveFileException("Not enough hands or piles in save data")
+      if (playerCount != handIndex) {
+        throw new CorruptedSaveFileException("Not enough hands in save data")
       }
 
       game.loadTurnAndLast(turn, lastPickup)
@@ -157,9 +170,9 @@ object ChunkIO {
     val file = new PrintWriter(fileName)
 
     try {
-      //file.print(Helpers.B64encode(saveData))
+      file.print(Helpers.B64encode(saveData.mkString))
       //file.print(saveData)
-      saveData.foreach(file.println)
+      //saveData.foreach(file.println)
 
     } finally {
       file.close
