@@ -317,28 +317,28 @@ object TextBasedGUI extends SimpleSwingApplication {
         s"The winners are ${winners.map(_.name).mkString(",")}"
       }
       updateLog(out)
-      disableAfterGame()
+      disableAfterGame() //game has ended so disable saving
     }
 
+    //plays a single turn
     def playTurn() = {
-      val turn = g.turn
+      val turn = g.turn  //whose turn it is
       val player = g.returnPlayers(turn) //the player in turn
-      val in =
+      val in =  //input for which card will be played
         if (turn == 0) { //if turnIndex is 0 == it's a human player
           playerInput
         } else { //otherwise it's a bot and decides the card without extra info
           g.botPlayCard()
         }
 
-      val card = g.playerCard(in)
-      var gotSelection = false
-      val choices = g.playCard(in)
-      val choice =
+      val card = player.returnHand(in)  //plays the card
+      val choices = g.playCard(in) //get choices for what cards can be picked up
+      val choice =  
         if (choices.flatten.isEmpty) { //if nothing can be picked up...
-          Buffer()
+          Buffer()  //return an empty collection
 
         } else if (choices.size == 1) { //if there is only one choice..
-          choices(0)
+          choices.head //return that choice
 
         } else { //if there is a choice that has to be made...
           val selection = if (turn == 0) { //ask the player which cards they want
@@ -354,26 +354,24 @@ object TextBasedGUI extends SimpleSwingApplication {
             } while (!output.isDefined || !ok)
             output.get.toInt
 
-          } else { //or allow the bot to select
+          } else { //or allow the bot to select which cards they want
             player.decideSelection(choices)
           }
 
           //the cards are then removed from the board and added to the players pile
-          g.pickupCards(choices(selection))
+          g.pickupCards(choices(selection)) //the chosen cards are returned
         }
 
-      //if the player picked something up, they're the player who last picked something up
+      //if the player picked something up, they're now the player who last picked something up
       if (!choice.isEmpty) g.changeLast
 
       val part3 = if (g.mokki) s"\n${player.name} clears the board!" else "" //check if the board was cleared
       g.changeTurn //change turn
-
-      ChunkIO.saveGame(g)
-      updateInfo
+      updateInfo  //update info about cards on the board/hand of the player
       //text for card pickup
       val part1 = player.name + " plays: " + card.toText
       val part2 = if (!choice.isEmpty) { ", gets: " + choice.map(_.toString).mkString(", ") } else ""
-      updateLog(part1 + part2 + part3)
+      updateLog(part1 + part2 + part3)  
     }
 
   }

@@ -36,7 +36,7 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
     this.dealer = dealer
   }
   
-  def playerCard(in: Int) = players(turn).returnHand(in)
+// def playerCard(in: Int) = players(turn).returnHand(in)
   
   //plays the given card from players hand to a Board.
   //if it doesn't pick up anything it gives an empty buffer that can be processed
