@@ -205,13 +205,9 @@ object TextBasedGUI extends SimpleSwingApplication {
     def loadGame = {
       try { //try to load the save data
         g = ChunkIO.load
-        if (g.gameOn) {
-          clearLog
-          enableWithGame()
-          loadWholeGame
-        } else {
-          updateLog("The saved game was already over!")
-        }
+        clearLog
+        enableWithGame()
+        loadWholeGame
       } catch { //if there's an exception, display it in the log.
         case e: CorruptedSaveFileException => {
           clearLog()
@@ -299,7 +295,7 @@ object TextBasedGUI extends SimpleSwingApplication {
       if (g.isRoundOver) {
         g.roundEnd() //clear board and count scores
         //tells the player the round has ended and who was the last to pick up any cards
-        updateLog(s"Round over! \n${g.asName(g.last)} was last pickup a card and clears the board.")
+        updateLog(s"Round over! \n${g.asName(g.last)} was last to pick up a card and clears the board.")
         scores //prints the scores
 
         true

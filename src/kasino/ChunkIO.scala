@@ -10,11 +10,11 @@ import java.io.IOException
 import java.io.StringReader
 
 object ChunkIO {
+  private val fileName = "saveFile.txt" //name of the file the game will be saved to
 
   //Decrypts the save file and gives it to the reader
   def load: Game = {
     try {
-      val fileName = "saveFile.txt"
       val input = for (line <- Source.fromFile(fileName).getLines()) yield line
       val decoded = Helpers.B64decode(input.mkString)
       val reader = new StringReader(decoded)
@@ -95,62 +95,73 @@ object ChunkIO {
         }
       }
 
+      //create new instances of deck, board, and Game
       val opponentCount = playerCount - 1
       val deck = new Deck(0)
       val board = new Board
       val game = new Game(opponentCount, playerName, board, deck)
 
+      //if the game is over, it shouldn't be loaded and thus an exception is thrown to prevent errors
       if (gameOver == "1") {
         throw new CorruptedSaveFileException("The game has already ended.")
       }
 
+      //get the card data from deckChunk and add cards to the deck.
       if (deckChunk != "") {
         val deckCards = for (card <- deckChunk.split("/")) yield cardMatch(card)
         deck.addCards(deckCards)
       }
 
+      //get the card data from boardChunk and add cards to the Board.
       if (boardChunk != "") {
         val boardCards = for (card <- boardChunk.split("/")) yield cardMatch(card)
         board.addCards(boardCards)
       }
 
-      val scores = for (score <- scoreChunk.split("/")) yield score.toInt
+      //create multiple files of data from handChunk that represent player hands
       val handChunks = for (hand <- handChunk.split("#")) yield hand
+      //create multiple files of data from pileChunk that represent player piles
       val pileChunks = for (pile <- pileChunk.split("#")) yield pile
 
-      var handIndex = 0
-      for (hand <- handChunks) {
-        if (!hand.isEmpty()) {
+      var handIndex = 0 //keep track of the player who's data is being accessed
+      for (hand <- handChunks) { //go through all the hands in handsChunks
+        if (!hand.isEmpty()) { //if the hand data is not empty, add cards in the chunk to the players hand
           val cards = for (card <- hand.split("/")) yield cardMatch(card)
           game.getPlayers(handIndex).addCards(cards.toBuffer)
         }
         handIndex += 1
       }
 
-      var pileIndex = 0
-      for (pile <- pileChunks) {
-        if (!pile.isEmpty()) {
+      var pileIndex = 0 //keep track of the player who's data is being accessed
+      for (pile <- pileChunks) { //go through all the piles in pileChunks
+        if (!pile.isEmpty()) { //if the pile data is not empty, add cards in the chunk to the players pile
           val cards = for (card <- pile.split("/")) yield cardMatch(card)
           game.getPlayers(pileIndex).addToPile(cards.toBuffer)
         }
         pileIndex += 1
       }
 
+      //if the amount of players, and amount of hands filled don't match, throw an exception.
       if (playerCount != handIndex) {
         throw new CorruptedSaveFileException("Not enough hands in save data")
       }
 
+      //load the indexes for who's in turn, last pickup and dealer.
       game.loadTurnLastDealer(turn, lastPickup, dealer)
+
+      //load the scores
+      val scores = for (score <- scoreChunk.split("/")) yield score.toInt
       game.loadScores(scores)
 
+      //finally, return the succesfully loaded game
       game
-    } catch {
+    } catch { //catch exceptions and throw a new CorruptedSaveFileException
       case e: IOException =>
         val saveExc = new CorruptedSaveFileException("Reading the save data failed.")
         saveExc.initCause(e)
         throw saveExc
-        
-      case e: NumberFormatException => {
+
+      case e: NumberFormatException => { //if a string, that can't be converted toInt is converted toInt
         val saveExc = new CorruptedSaveFileException("There was data that couldn't be converted to an integer when it should have been.")
         saveExc.initCause(e)
         throw saveExc
@@ -165,6 +176,7 @@ object ChunkIO {
     val deck = game.deck
     val board = game.board
 
+    //get all the information that needs to be stored and save it as strings.
     val opponentCount = players.size.toString
     val playerName = game.playerName
     val turn = game.turn.toString
@@ -177,6 +189,7 @@ object ChunkIO {
     val playerHands = { for (player <- players) yield player.returnHand }.map(_.map(_.toString()).mkString("/")).mkString("#")
     val playerPiles = { for (player <- players) yield player.returnPile.mkString("/") }.mkString("#")
 
+    //the names of all the different chunks and what they contain.
     val chunks: Array[(String, String)] = Array(
       ("OVR", gameOver),
       ("OPC", opponentCount),
@@ -191,16 +204,18 @@ object ChunkIO {
       ("PLS", playerPiles),
       ("END", "000"))
 
+    //create a single string of data that will be saved
     val saveData = {
       val out =
         for (part <- chunks) yield part._1 + len(part._2) + part._2
       "KASINO" ++ out
     }
 
-    val fileName = "saveFile.txt"
+    //a printWriter that writes the data to the file
     val file = new PrintWriter(fileName)
 
     try {
+      //write the data to the file, encrypted with Base 64 encoding
       file.print(Helpers.B64encode(saveData.mkString))
 
     } finally {
@@ -208,6 +223,7 @@ object ChunkIO {
     }
   }
 
+  //a function with a short name for calling the helper function that creates strings from int's with 3 character length
   private def len(input: String): String = Helpers.ThreeLenStr(input.length())
 
 }
@@ -223,12 +239,16 @@ object Helpers {
     chunkHeader.take(3).mkString
   }
 
+  //The read-method of the Reader class will occasionally read only part of
+  //the characters that were requested. This method will repeatedly call read
+  //to completely fill the given buffer. The size of the buffer tells the
+  //algorithm how many bytes should be read.
   def readFully(result: Array[Char], input: Reader) = {
     var cursor = 0
     while (cursor != result.length) {
       var numCharactersRead = input.read(result, cursor, result.length - cursor)
 
-      if (numCharactersRead == -1) {
+      if (numCharactersRead == -1) { // If the file end is reached before the buffer is filled an exception is thrown.
         throw new CorruptedSaveFileException("Unexpected end of file.")
       }
       cursor += numCharactersRead
