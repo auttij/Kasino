@@ -88,7 +88,7 @@ object ChunkIO {
       val game = new Game(opponentCount, playerName, board, deck)
 
       if (gameOver == "1") {
-        game.endGame()
+        throw new CorruptedSaveFileException("The game has already ended.")
       }
       
       if (deckChunk != "") {

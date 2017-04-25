@@ -10,6 +10,7 @@ import java.awt.Color
 import scala.swing.Dialog
 import javax.swing.JOptionPane
 import javax.swing.Icon
+import scala.util.Try
 
 object TextBasedGUI extends SimpleSwingApplication {
 
@@ -17,12 +18,12 @@ object TextBasedGUI extends SimpleSwingApplication {
 
   def top = new MainFrame {
 
+    //the display area where played cards and other inputs are shown.
     val log = new TextArea(18, 80) {
-      //minimumSize = preferredSize
       editable = false
       wordWrap = true
       lineWrap = true
-      text = {
+      text = { //tutorial text for how to play the game
         "When playing, choose the card you want\n" +
           "to play by entering a value between 0 and 3\n" +
           "that represents the card you want to play.\n\n" +
@@ -37,38 +38,43 @@ object TextBasedGUI extends SimpleSwingApplication {
           " -Any Ace (1 point each) (value when played is 14)\n" +
           "Or by clearing the board. (1 point)\n" +
           "Points are calculated at the end of each round.\n" +
-          "The first player to 16 points wins."
+          "The first player to 16 points wins.\n"
       }
     }
+    //text area where information about cards on board and in players hand is shown
     val infoBox = new TextArea(3, 80) {
       editable = false
       wordWrap = true
       lineWrap = true
       text = "Start a new game from the menu bar!"
     }
+    //text input area
     val input = new TextField(20) {
       minimumSize = preferredSize
     }
     this.listenTo(input.keys)
 
-    def clearLog() = {
-      this.log.text = ""
-    }
-
     // Events: 
     this.reactions += {
       case keyEvent: KeyPressed =>
         if (keyEvent.source == this.input && keyEvent.key == Key.Enter && this.g.gameOn) {
+
           val command = this.input.text.trim
-          if (command.nonEmpty) {
-            if (command <= "9" && command >= "0") {
+          if (command.nonEmpty) { //if something was written in the text area
+
+            val isInt = Try(command.toInt).isSuccess //Checks if the input can be turned to and Int       
+            if (isInt) {
+
               val player = g.humanPlayer
               val in = command.toInt
               if (in < player.handSize && in >= 0) {
-                processInput(in)
+                playerInput = in //changes the variable used for selecting the card the user plays
+                playTurn //plays the players turn
+                playUntilPlayer() //plays the game until it's the players turn again
               }
             }
-            this.input.text = ""
+
+            this.input.text = "" //clear the text area
           }
         }
     }
@@ -128,87 +134,23 @@ object TextBasedGUI extends SimpleSwingApplication {
 
     }
 
-    def selection = new Frame {
-      val cards = g.returnPlayers(0).returnHand
-      val buttonToVal = new scala.collection.mutable.HashMap[AbstractButton, Int]()
-      val valuePanel = new BoxPanel(Orientation.Horizontal) {
-        for (ind <- cards.indices) {
-          val v = ind
-          val button = new Button(cards(ind).toString)
-          button.border = new MatteBorder(1, 1, 1, 1, Color.gray)
-          button.background = Color.blue
-          button.preferredSize = new Dimension(60, 60)
-          contents += button
-          buttonToVal(button) = v
-        }
-      }
-    }
-
-    def popup = new Frame {
-      val cards = g.returnCards
-      title = "Select"
-      val buttonToVal = new scala.collection.mutable.HashMap[AbstractButton, Int]()
-      val valuePanel = new GridPanel(2, 2) {
-        for (ind <- cards.indices) {
-          val v = ind
-          val button = new Button(cards(ind).toString)
-          button.border = new MatteBorder(1, 1, 1, 1, Color.gray)
-          button.background = Color.blue
-          button.preferredSize = new Dimension(60, 60)
-          contents += button
-          buttonToVal(button) = v
-        }
-      }
-      this.visible = true
-      contents = new GridBagPanel() {
-        val c = new Constraints
-        c.fill = Fill.Horizontal
-        c.gridx = 0
-        c.gridy = 0
-        layout(valuePanel) = c
-        c.gridx = 0
-        c.gridy = 1
-      }
-      reactions += {
-        case ButtonClicked(b) => {
-          playerInput = buttonToVal(b) - 1
-          this.dispose()
-
-        }
-      }
-
-    }
-
-    def launchPopup(player: Player) = {
-      val size = player.handSize
-      var input: Option[String] = None
-      var ok = false
-      do {
-        val text = if (size > 1) s"(0 - ${size - 1})" else (0)
-        input = Dialog.showInput(log, s"Select card $text", initial = "")
-        if (input.isDefined) {
-          ok = (input.get >= "0" && input.get < size.toString)
-        }
-      } while (!input.isDefined || !ok)
-
-      playerInput = input.get.toInt
-    }
-
     // Set up the initial state of the GUI:
 
     this.title = "Kasino"
     this.location = new Point(700, 400)
-    this.minimumSize = new Dimension(200, 200)
+    this.minimumSize = new Dimension(400, 400)
     this.pack()
     this.input.requestFocusInWindow()
     this.visible = true
 
-    def processInput(in: Int) = {
-      playerInput = in
-      playTurn
-      playUntilPlayer()
+    //Methods that update the text areas of the GUI
+
+    //clears the log of all it's text
+    def clearLog() = {
+      this.log.text = ""
     }
 
+    //prints out the given string to the log text area
     def updateLog(in: String) = {
       if (g.turn == 1) {
         clearLog
@@ -216,47 +158,70 @@ object TextBasedGUI extends SimpleSwingApplication {
       log.text += in + "\n"
     }
 
+    //updates the infobox with information about cards on the table and cards in the players hand
     def updateInfo = {
-      this.infoBox.text = s"Cards on the table: ${g.returnCards.mkString(", ")}\nYour hand: ${g.returnPlayers(0).returnHand.mkString(", ")}"
+      this.infoBox.text = {
+        s"Cards on the table: ${g.returnCards.mkString(", ")}\n" +
+          s"Your hand: ${g.returnPlayers(0).returnHand.mkString(", ")}"
+      }
     }
 
+    //updates the log with information on who is the current dealer in the game.
     def dealerInfo = {
       val dealer = g.returnPlayers(g.getDealer)
       updateLog(s"The current dealer is ${dealer.name}")
     }
 
+    //Updates the log with information about player scores
+    def scores = {
+      val scores = g.getPlayerScores
+      updateLog("Current scores: " + scores.mkString(" ") + "\n")
+    }
+
+    //Asks the player for input and creates a new game based on given information
     def startGame = {
       var opponents: Option[String] = None
       var ok = false
       val text = "How many opponents do you want to play against?\nChoose a number between 1 and 11.\nSuggested amounts are 2, 3 and 5."
       do {
-        opponents = Dialog.showInput(log, text, initial = "")
-        if (opponents.isDefined) {
-          ok = (opponents.get >= "0" && opponents.get <= "9")
-          if (ok) ok = (opponents.get.toInt <= 11 && opponents.get.toInt > 0)
-        }
+        opponents = Dialog.showInput(log, text, initial = "")  //asks the player how many opponents they want to play against
+        val isInt = Try(opponents.get.toInt).isSuccess
+        ok = if (isInt) (opponents.get.toInt <= 11 && opponents.get.toInt > 0) else false
+
       } while (!opponents.isDefined || !ok)
+
       var name: Option[String] = None
       do {
-        name = Dialog.showInput(log, "What's your name?", initial = "")
+        name = Dialog.showInput(log, "What's your name?", initial = "") //ask the players name
       } while (!name.isDefined)
 
-      g = new Game(opponents.get.toInt, name.get, new Board, new Deck(0))
-      saveAndQuit.enabled = (true)
-      clearLog
-      newWholeGame()
+      g = new Game(opponents.get.toInt, name.get, new Board, new Deck(0)) //create a new game
+      enableWithGame()  //enable saving
+      clearLog  //clears the log
+      newWholeGame()  //starts a new game
     }
 
+    //loads a game from the save file
     def loadGame = {
-      g = ChunkIO.load
+      try {  //try to load the save data
+        g = ChunkIO.load
+      } catch {
+        case e: CorruptedSaveFileException => {
+          clearLog()
+          val text = "Loading save data failed!\n" + e
+          updateLog(text)
+        }
+      }
       if (g.gameOn) {
         clearLog
-        loadedWholeGame
+        enableWithGame()
+        loadWholeGame
       } else {
         updateLog("The saved game was already over!")
       }
     }
 
+    //Saves the game and closes the program
     def saveQuit = {
       val res = Dialog.showConfirmation(
         log,
@@ -270,6 +235,18 @@ object TextBasedGUI extends SimpleSwingApplication {
       }
     }
 
+    //there were supposed to be more items to be enable/disabled, 
+    //but like this I could have done without these two methods
+    //Enable certain things, called when game starts
+    def enableWithGame() = {  
+      saveAndQuit.enabled = (true)
+    }
+
+    //Disable certain things, called when a game ends
+    def disableAfterGame() = {
+      saveAndQuit.enabled = (false)
+    }
+
     // Game:
     var g = new Game(5, "The Nameless One", new Board, new Deck(0))
     var playerInput = 0
@@ -281,10 +258,11 @@ object TextBasedGUI extends SimpleSwingApplication {
       playUntilPlayer
     }
 
-    def loadedWholeGame() = {
+    //starts a game loaded from a save file and show some useful info for the player.
+    def loadWholeGame() = {
       updateLog("Game loaded!")
       scores
-      playUntilPlayer()
+      updateInfo
     }
 
     //start a new game
@@ -296,13 +274,14 @@ object TextBasedGUI extends SimpleSwingApplication {
       updateInfo
     }
 
+    //plays the game automaticall until it's the players turn
     def playUntilPlayer(): Unit = {
-      if (g.gameOn && isRoundOver) newGame
-      if (g.turn != 0) playBots()
-      if (!g.gameOn) gameEnd
-      if (g.gameOn && g.isRoundOver) {
-        newGame
-        playUntilPlayer()
+      if (g.gameOn && isRoundOver) newGame //if someone hasn't won and no one has cards, start a new game
+      if (g.turn != 0) playBots() //if the player in turn isn't human play until it is or game ends
+      if (!g.gameOn) gameEnd //if someone has won, end the game
+      if (g.gameOn && g.isRoundOver) { //if a round has ended but no one has won
+        newGame //start a new game
+        playUntilPlayer() //and play until it's the players turn
       }
     }
 
@@ -313,11 +292,14 @@ object TextBasedGUI extends SimpleSwingApplication {
       }
     }
 
+    //checks if the round is over and returns true/false
+    //if the round has ended, it runs all the round ending methods
     def isRoundOver() = {
       if (g.isRoundOver) {
-        g.roundEnd()
-        updateLog(s"Round over! \n${g.asName(g.last)} was last and clears the board.")
-        scores
+        g.roundEnd() //clear board and count scores
+        //tells the player the round has ended and who was the last to pick up any cards
+        updateLog(s"Round over! \n${g.asName(g.last)} was last pickup a card and clears the board.")
+        scores //prints the scores
 
         true
       } else {
@@ -325,15 +307,8 @@ object TextBasedGUI extends SimpleSwingApplication {
       }
     }
 
-    def gameRoundLoop() = {
-      while (!g.isRoundOver) {
-        playTurn()
-      }
-      g.roundEnd()
-    }
-
     //once the game has ended, this method gets called
-    //prints out the winner/winners
+    //prints out the winner or winners
     def gameEnd() = {
       val winners = g.winners
       val out = if (winners.length == 1) {
@@ -342,12 +317,7 @@ object TextBasedGUI extends SimpleSwingApplication {
         s"The winners are ${winners.map(_.name).mkString(",")}"
       }
       updateLog(out)
-      saveAndQuit.enabled_=(false)
-    }
-
-    def scores = {
-      val scores = g.getPlayerScores
-      updateLog("Current scores: " + scores.mkString(" ") + "\n")
+      disableAfterGame()
     }
 
     def playTurn() = {
@@ -355,11 +325,7 @@ object TextBasedGUI extends SimpleSwingApplication {
       val player = g.returnPlayers(turn) //the player in turn
       val in =
         if (turn == 0) { //if turnIndex is 0 == it's a human player
-
-          //          updateInfo
-          //          launchPopup(player)
           playerInput
-
         } else { //otherwise it's a bot and decides the card without extra info
           g.botPlayCard()
         }
@@ -382,10 +348,9 @@ object TextBasedGUI extends SimpleSwingApplication {
             var output: Option[String] = None
             do {
               output = Dialog.showInput(log, text, initial = "")
-              if (output.isDefined) {
-                ok = (output.get >= "0" && output.get <= "9")
-                if (ok) ok = (output.get.toInt <= choices.size - 1 && output.get.toInt >= 0)
-              }
+              val isInt = Try(output.get.toInt).isSuccess
+              ok = if (isInt) (output.get.toInt <= choices.size - 1 && output.get.toInt >= 0) else false
+
             } while (!output.isDefined || !ok)
             output.get.toInt
 

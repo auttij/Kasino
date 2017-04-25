@@ -94,15 +94,18 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
   //changes the player who is currently playing to the next player
   def changeTurn() = turnIndex = (turnIndex + 1) % players.length
   
+  //changes the player who is the dealer for the next round and
+  //set the player in turn to be the player after the dealer.
   def changeDealer() = {
     dealer = (dealer + 1) % players.length
-    changeTurn
+    turnIndex = (dealer + 1) % players.length
   }
   
   //did the game end? if so gameOver = true
   def didGameEnd() = if (scores.isGameOver) endGame
 
-  def endGame() = this.gameOver = true
+  //forces the game to end
+  private def endGame() = this.gameOver = true
   
   //the winners of the game
   def winners = scores.getWinners.map(x => players(x))
@@ -124,10 +127,9 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
     handSizes.max == 0
   }
   
-  //when a round ends (deck is empty) collect remaining cards and update points
+  //when a round ends (all cards have been played) collect remaining cards and update points
   def roundEnd() = {
     players(lastPickup).addToPile(board.collectAll)
-    //players(lastPickup).addToPile(deck.collectAll)
     scores.updatePoints
     changeDealer
     didGameEnd
