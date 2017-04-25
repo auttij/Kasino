@@ -9,8 +9,8 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
   private val scores = Scores(this, players.size)
   private val rounds = 48 / (players.length * 4) //tells the amount of rounds that will be played
   private var gameOver = false
-  private var turnIndex = 0 //stepper
-  private var lastPickup = 0
+  private var turnIndex = 0   //stepper
+  private var lastPickup = 0  //most recent keeper
   
   def turn = this.turnIndex
   def returnPlayers = this.players
@@ -80,8 +80,10 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
   def changeTurn() = turnIndex = (turnIndex + 1) % players.length
   
   //did the game end? if so gameOver = true
-  def didGameEnd() = if (scores.isGameOver) gameOver = true
+  def didGameEnd() = if (scores.isGameOver) endGame
 
+  def endGame() = this.gameOver = true
+  
   //the winners of the game
   def winners = scores.getWinners.map(x => players(x))
 
@@ -102,8 +104,8 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
     players(lastPickup).addToPile(board.collectAll)
     players(lastPickup).addToPile(deck.collectAll)
     scores.updatePoints
-    ChunkIO.saveGame(this)
     didGameEnd
+    ChunkIO.saveGame(this)
   }
 
   //checks if the board has been cleared and if so, gives the player who cleared it a point

@@ -10,17 +10,15 @@ import java.io.IOException
 import java.io.StringReader
 
 object ChunkIO {
-  
-  
-  
+
   def load: Game = {
     val fileName = "saveFile.txt"
     val input = for (line <- Source.fromFile(fileName).getLines()) yield line
     val decoded = Helpers.B64decode(input.mkString)
-    val reader = new  StringReader(decoded)
+    val reader = new StringReader(decoded)
     loadGame(reader)
   }
-  
+
   def loadGame(input: Reader): Game = {
     def handleChunk(chunkHeader: Array[Char]) = {
       val arr = new Array[Char](Helpers.extractChunkSize(chunkHeader))
@@ -54,6 +52,7 @@ object ChunkIO {
 
       val deck = new Deck(0)
       val board = new Board
+      var gameOver = ""
       var playerCount = 0
       var playerName = ""
       var turn = 0
@@ -68,8 +67,7 @@ object ChunkIO {
       while (!endFound) {
         Helpers.readFully(chunkHeader, input)
         Helpers.extractChunkName(chunkHeader) match {
-          case "CMT" =>
-            val comment = handleChunk(chunkHeader).mkString
+          case "OVR" => gameOver = handleChunk(chunkHeader).mkString
           case "OPC" => playerCount = handleChunk(chunkHeader).mkString.toInt
           case "NAM" => playerName = handleChunk(chunkHeader).mkString
           case "TRN" => turn = handleChunk(chunkHeader).mkString.toInt
@@ -86,15 +84,25 @@ object ChunkIO {
 
       val opponentCount = playerCount - 1
       val game = new Game(opponentCount, playerName, board, deck)
-      val deckCards = for (card <- deckChunk.split("/")) yield cardMatch(card)
-      val boardCards = for (card <- boardChunk.split("/")) yield cardMatch(card)
-      val scores = for (score <- scoreChunk.split("/")) yield score.toInt
+
+      if (gameOver == "1") {
+        game.endGame()
+      }
       
-      deck.addCards(deckCards)
-      board.addCards(boardCards)
+      if (deckChunk != "") {
+        val deckCards = for (card <- deckChunk.split("/")) yield cardMatch(card)
+        deck.addCards(deckCards)
+      }
+
+      if (boardChunk != "") {
+        val boardCards = for (card <- boardChunk.split("/")) yield cardMatch(card)
+        board.addCards(boardCards)
+      }
+
+      val scores = for (score <- scoreChunk.split("/")) yield score.toInt
       val handChunks = for (hand <- handChunk.split("#")) yield hand
       val pileChunks = for (pile <- pileChunk.split("#")) yield pile
-      
+
       var handIndex = 0
       for (hand <- handChunks) {
         if (!hand.isEmpty()) {
@@ -103,7 +111,7 @@ object ChunkIO {
         }
         handIndex += 1
       }
-      
+
       var pileIndex = 0
       for (pile <- pileChunks) {
         if (!pile.isEmpty()) {
@@ -112,14 +120,14 @@ object ChunkIO {
         }
         pileIndex += 1
       }
-      
+
       if (playerCount != handIndex) {
         throw new CorruptedSaveFileException("Not enough hands in save data")
       }
 
       game.loadTurnAndLast(turn, lastPickup)
       game.loadScores(scores)
-      
+
       game
     } catch {
       case e: IOException =>
@@ -141,6 +149,7 @@ object ChunkIO {
     val turn = game.turn.toString
     val lastPickup = game.returnLastPickup.toString
     val deckCards = deck.returnCards.mkString("/")
+    val gameOver = if (!game.gameOn) "1" else "0"
     //val deckSeed = deck.usedSeed.toString
     //val deckRemaining = deck.remaining.toString
     val boardCards = board.returnCards.mkString("/")
@@ -149,6 +158,7 @@ object ChunkIO {
     val playerPiles = { for (player <- players) yield player.returnPile.mkString("/") }.mkString("#")
 
     val chunks: Array[(String, String)] = Array(
+      ("OVR", gameOver),
       ("OPC", opponentCount),
       ("NAM", playerName),
       ("TRN", turn),
@@ -161,7 +171,7 @@ object ChunkIO {
       ("END", "000"))
 
     val saveData = {
-      val out = 
+      val out =
         for (part <- chunks) yield part._1 + len(part._2) + part._2
       "KASINO" ++ out
     }

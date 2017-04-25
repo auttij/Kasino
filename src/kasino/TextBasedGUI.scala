@@ -162,7 +162,11 @@ object TextBasedGUI extends SimpleSwingApplication {
     
     def loadGame = {
       g = ChunkIO.load
-      loadedWholeGame()
+      if (g.gameOn) {
+        loadedWholeGame()
+      } else {
+        updateLog("The saved game was already over!")
+      }
     }
 
     // Game:
