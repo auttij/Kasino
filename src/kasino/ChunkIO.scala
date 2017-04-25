@@ -11,21 +11,32 @@ import java.io.StringReader
 
 object ChunkIO {
 
+  //Decrypts the save file and gives it to the reader
   def load: Game = {
-    val fileName = "saveFile.txt"
-    val input = for (line <- Source.fromFile(fileName).getLines()) yield line
-    val decoded = Helpers.B64decode(input.mkString)
-    val reader = new StringReader(decoded)
-    loadGame(reader)
+    try {
+      val fileName = "saveFile.txt"
+      val input = for (line <- Source.fromFile(fileName).getLines()) yield line
+      val decoded = Helpers.B64decode(input.mkString)
+      val reader = new StringReader(decoded)
+      loadGame(reader)
+    } catch {
+      case e: java.lang.IllegalArgumentException =>
+        val saveExc = new CorruptedSaveFileException("Corrupted Save data, couldn't be decrypted.")
+        saveExc.initCause(e)
+        throw saveExc
+    }
   }
 
+  //processes save data and creates a new game
   def loadGame(input: Reader): Game = {
+    //a helper method. Given the header of an array, it reads for as longs as instructed and returns the read data.
     def handleChunk(chunkHeader: Array[Char]) = {
       val arr = new Array[Char](Helpers.extractChunkSize(chunkHeader))
       Helpers.readFully(arr, input)
       arr
     }
 
+    //takes a textual description of a card and then creates that card
     def cardMatch(input: String): Card = {
       def suit(in: Char) = {
         in match {
@@ -50,8 +61,7 @@ object ChunkIO {
         throw new CorruptedSaveFileException("Unknown file type")
       }
 
-      val deck = new Deck(0)
-      val board = new Board
+      //variables where values read from data are stored
       var gameOver = ""
       var playerCount = 0
       var playerName = ""
@@ -65,6 +75,7 @@ object ChunkIO {
       var handChunk = ""
       var pileChunk = ""
 
+      //read data until "END" is found
       while (!endFound) {
         Helpers.readFully(chunkHeader, input)
         Helpers.extractChunkName(chunkHeader) match {
@@ -85,12 +96,14 @@ object ChunkIO {
       }
 
       val opponentCount = playerCount - 1
+      val deck = new Deck(0)
+      val board = new Board
       val game = new Game(opponentCount, playerName, board, deck)
 
       if (gameOver == "1") {
         throw new CorruptedSaveFileException("The game has already ended.")
       }
-      
+
       if (deckChunk != "") {
         val deckCards = for (card <- deckChunk.split("/")) yield cardMatch(card)
         deck.addCards(deckCards)
@@ -136,6 +149,12 @@ object ChunkIO {
         val saveExc = new CorruptedSaveFileException("Reading the save data failed.")
         saveExc.initCause(e)
         throw saveExc
+        
+      case e: NumberFormatException => {
+        val saveExc = new CorruptedSaveFileException("There was data that couldn't be converted to an integer when it should have been.")
+        saveExc.initCause(e)
+        throw saveExc
+      }
     }
   }
 
@@ -153,8 +172,6 @@ object ChunkIO {
     val deckCards = deck.returnCards.mkString("/")
     val gameOver = if (!game.gameOn) "1" else "0"
     val dealer = game.getDealer.toString
-    //val deckSeed = deck.usedSeed.toString
-    //val deckRemaining = deck.remaining.toString
     val boardCards = board.returnCards.mkString("/")
     val scores = game.getPlayerScores.map(x => x._2).mkString("/")
     val playerHands = { for (player <- players) yield player.returnHand }.map(_.map(_.toString()).mkString("/")).mkString("#")
@@ -185,8 +202,6 @@ object ChunkIO {
 
     try {
       file.print(Helpers.B64encode(saveData.mkString))
-      //file.print(saveData)
-      //saveData.foreach(file.println)
 
     } finally {
       file.close
@@ -220,15 +235,18 @@ object Helpers {
     }
   }
 
+  //Encodes a string with Base 64 encryption
   def B64encode(input: String): String =
     Base64.getEncoder.encodeToString(input.getBytes(StandardCharsets.UTF_8))
 
+  //decodes a string that has been encoded with Base 64 encryption
   def B64decode(input: String) = {
     val bytes = Base64.getDecoder.decode(input.getBytes(StandardCharsets.UTF_8))
     new String(bytes, StandardCharsets.UTF_8)
   }
 
   //takes a 1 - 3 digit integer and returns it as a 3 character long string
+  //for example 7 -> "007"
   def ThreeLenStr(input: Int): String = f"$input%03d"
 
 }

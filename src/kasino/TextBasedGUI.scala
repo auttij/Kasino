@@ -184,7 +184,7 @@ object TextBasedGUI extends SimpleSwingApplication {
       var ok = false
       val text = "How many opponents do you want to play against?\nChoose a number between 1 and 11.\nSuggested amounts are 2, 3 and 5."
       do {
-        opponents = Dialog.showInput(log, text, initial = "")  //asks the player how many opponents they want to play against
+        opponents = Dialog.showInput(log, text, initial = "") //asks the player how many opponents they want to play against
         val isInt = Try(opponents.get.toInt).isSuccess
         ok = if (isInt) (opponents.get.toInt <= 11 && opponents.get.toInt > 0) else false
 
@@ -196,29 +196,30 @@ object TextBasedGUI extends SimpleSwingApplication {
       } while (!name.isDefined)
 
       g = new Game(opponents.get.toInt, name.get, new Board, new Deck(0)) //create a new game
-      enableWithGame()  //enable saving
-      clearLog  //clears the log
-      newWholeGame()  //starts a new game
+      enableWithGame() //enable saving
+      clearLog //clears the log
+      newWholeGame() //starts a new game
     }
 
     //loads a game from the save file
     def loadGame = {
-      try {  //try to load the save data
+      try { //try to load the save data
         g = ChunkIO.load
-      } catch {
+        if (g.gameOn) {
+          clearLog
+          enableWithGame()
+          loadWholeGame
+        } else {
+          updateLog("The saved game was already over!")
+        }
+      } catch { //if there's an exception, display it in the log.
         case e: CorruptedSaveFileException => {
           clearLog()
           val text = "Loading save data failed!\n" + e
           updateLog(text)
         }
       }
-      if (g.gameOn) {
-        clearLog
-        enableWithGame()
-        loadWholeGame
-      } else {
-        updateLog("The saved game was already over!")
-      }
+
     }
 
     //Saves the game and closes the program
@@ -238,7 +239,7 @@ object TextBasedGUI extends SimpleSwingApplication {
     //there were supposed to be more items to be enable/disabled, 
     //but like this I could have done without these two methods
     //Enable certain things, called when game starts
-    def enableWithGame() = {  
+    def enableWithGame() = {
       saveAndQuit.enabled = (true)
     }
 
@@ -322,20 +323,20 @@ object TextBasedGUI extends SimpleSwingApplication {
 
     //plays a single turn
     def playTurn() = {
-      val turn = g.turn  //whose turn it is
+      val turn = g.turn //whose turn it is
       val player = g.getPlayers(turn) //the player in turn
-      val in =  //input for which card will be played
+      val in = //input for which card will be played
         if (turn == 0) { //if turnIndex is 0 == it's a human player
           playerInput
         } else { //otherwise it's a bot and decides the card without extra info
           g.botPlayCard()
         }
 
-      val card = player.returnHand(in)  //plays the card
+      val card = player.returnHand(in) //plays the card
       val choices = g.playCard(in) //get choices for what cards can be picked up
-      val choice =  
+      val choice =
         if (choices.flatten.isEmpty) { //if nothing can be picked up...
-          Buffer()  //return an empty collection
+          Buffer() //return an empty collection
 
         } else if (choices.size == 1) { //if there is only one choice..
           choices.head //return that choice
@@ -367,11 +368,11 @@ object TextBasedGUI extends SimpleSwingApplication {
 
       val part3 = if (g.mokki) s"\n${player.name} clears the board!" else "" //check if the board was cleared
       g.changeTurn //change turn
-      updateInfo  //update info about cards on the board/hand of the player
+      updateInfo //update info about cards on the board/hand of the player
       //text for card pickup
       val part1 = player.name + " plays: " + card.toText
       val part2 = if (!choice.isEmpty) { ", gets: " + choice.map(_.toString).mkString(", ") } else ""
-      updateLog(part1 + part2 + part3)  
+      updateLog(part1 + part2 + part3)
     }
 
   }
