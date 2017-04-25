@@ -14,59 +14,133 @@ import javax.swing.Icon
 object TextBasedGUI extends SimpleSwingApplication {
 
   UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName)
-  
+
   def top = new MainFrame {
 
-    val log = new TextArea(14, 60) {
+    val log = new TextArea(18, 80) {
+      //minimumSize = preferredSize
       editable = false
       wordWrap = true
       lineWrap = true
+      text = {
+        "When playing, choose the card you want\n" +
+          "to play by entering a value between 0 and 3\n" +
+          "that represents the card you want to play.\n\n" +
+          "When you play a card, all cards and combinations of cards\n" +
+          "that equal to the value of your played card are picked up\n" +
+          "from the table and added to your pile.\n" +
+          "Win the game by collecting the most points.\n Points are awarded for getting:\n" +
+          " -Most cards (1 point)\n" +
+          " -Most spades (2 points)\n" +
+          " -10 of Diamonds (2 points) (value when played is 16)\n" +
+          " -2 of Spades (1 point)  (value when played is 15)\n" +
+          " -Any Ace (1 point each) (value when played is 14)\n" +
+          "Or by clearing the board. (1 point)\n" +
+          "Points are calculated at the end of each round.\n" +
+          "The first player to 16 points wins."
+      }
     }
-    val infoBox = new TextArea(3, 60) {
+    val infoBox = new TextArea(3, 80) {
       editable = false
       wordWrap = true
       lineWrap = true
+      text = "Start a new game from the menu bar!"
     }
     val input = new TextField(20) {
       minimumSize = preferredSize
     }
     this.listenTo(input.keys)
 
-    // Events: 
+    def clearLog() = {
+      this.log.text = ""
+    }
 
+    // Events: 
     this.reactions += {
       case keyEvent: KeyPressed =>
         if (keyEvent.source == this.input && keyEvent.key == Key.Enter && this.g.gameOn) {
           val command = this.input.text.trim
           if (command.nonEmpty) {
+            if (command <= "9" && command >= "0") {
+              val player = g.humanPlayer
+              val in = command.toInt
+              if (in < player.handSize && in >= 0) {
+                processInput(in)
+              }
+            }
             this.input.text = ""
           }
-          if (!g.gameOn) gameEnd
         }
     }
 
     //  Layout:
-
     this.contents = new GridBagPanel {
       import scala.swing.GridBagPanel.Anchor._
-      layout += new Label("Location:") -> new Constraints(0, 0, 1, 1, 0, 1, NorthWest.id, Fill.None.id, new Insets(8, 5, 5, 5), 0, 0)
-      //layout += new Label("Command:") -> new Constraints(0, 1, 1, 1, 0, 0, NorthWest.id, Fill.None.id, new Insets(8, 5, 5, 5), 0, 0)
-      layout += new Label("Info:") -> new Constraints(0, 2, 1, 1, 0, 0, NorthWest.id, Fill.None.id, new Insets(8, 5, 5, 5), 0, 0)
-      //      layout += turnCounter            -> new Constraints(0, 3, 2, 1, 0, 0, NorthWest.id, Fill.None.id, new Insets(8, 5, 5, 5), 0, 0)
-      layout += log -> new Constraints(1, 0, 1, 1, 1, 1, NorthWest.id, Fill.Both.id, new Insets(5, 5, 5, 5), 0, 0)
-      //layout += input -> new Constraints(1, 1, 1, 1, 1, 0, NorthWest.id, Fill.None.id, new Insets(5, 5, 5, 5), 0, 0)
-      layout += infoBox -> new Constraints(1, 2, 1, 1, 1, 1, SouthWest.id, Fill.Both.id, new Insets(5, 5, 5, 5), 0, 0)
+      def constraints(x: Int, y: Int,
+                      gridwidth: Int = 1, gridheight: Int = 1,
+                      weightx: Double = 0.0, weighty: Double = 0.0,
+                      fill: GridBagPanel.Fill.Value = GridBagPanel.Fill.None,
+                      anchor: GridBagPanel.Anchor.Value = NorthWest,
+                      insets: Insets = new Insets(5, 5, 5, 5)): Constraints = {
+        val c = new Constraints
+        c.gridx = x
+        c.gridy = y
+        c.gridwidth = gridwidth
+        c.gridheight = gridheight
+        c.weightx = weightx
+        c.weighty = weighty
+        c.fill = fill
+        c.anchor = anchor
+        c.insets = insets
+        c
+      }
+
+      add(new Label("Info:"),
+        constraints(0, 0, insets = new Insets(8, 5, 5, 5)))
+      add(new Label("Command:"),
+        constraints(0, 3, insets = new Insets(8, 5, 5, 5)))
+      add(new Label("History:"),
+        constraints(0, 4, insets = new Insets(8, 5, 5, 5)))
+      add(infoBox,
+        constraints(1, 0, weightx = 1.0, fill = GridBagPanel.Fill.Horizontal))
+      add(input,
+        constraints(1, 3, weightx = 1.0, fill = GridBagPanel.Fill.Horizontal))
+      add(log,
+        constraints(1, 4, gridheight = 3, weighty = 1.0,
+          fill = GridBagPanel.Fill.Both))
+
     }
 
     // Menu: 
+    val startAction = Action("New game") { startGame }
+    val loadAction = Action("Load game") { loadGame }
+    val saveAndQuit = Action("Save & Quit") { saveQuit }
+    val quitAction = Action("Quit") { dispose() }
+    saveAndQuit.enabled = (false)
+
     this.menuBar = new MenuBar {
       contents += new Menu("Program") {
-        val quitAction = Action("Quit") { dispose() }
-        val startAction = Action("New game") { startGame }
-        val loadAction = Action("Load game") { loadGame }
         contents += new MenuItem(startAction)
         contents += new MenuItem(loadAction)
+        contents += new MenuItem(saveAndQuit)
         contents += new MenuItem(quitAction)
+      }
+
+    }
+
+    def selection = new Frame {
+      val cards = g.returnPlayers(0).returnHand
+      val buttonToVal = new scala.collection.mutable.HashMap[AbstractButton, Int]()
+      val valuePanel = new BoxPanel(Orientation.Horizontal) {
+        for (ind <- cards.indices) {
+          val v = ind
+          val button = new Button(cards(ind).toString)
+          button.border = new MatteBorder(1, 1, 1, 1, Color.gray)
+          button.background = Color.blue
+          button.preferredSize = new Dimension(60, 60)
+          contents += button
+          buttonToVal(button) = v
+        }
       }
     }
 
@@ -129,15 +203,26 @@ object TextBasedGUI extends SimpleSwingApplication {
     this.input.requestFocusInWindow()
     this.visible = true
 
+    def processInput(in: Int) = {
+      playerInput = in
+      playTurn
+      playUntilPlayer()
+    }
+
     def updateLog(in: String) = {
       if (g.turn == 1) {
-        log.text = ""
+        clearLog
       }
       log.text += in + "\n"
     }
 
     def updateInfo = {
       this.infoBox.text = s"Cards on the table: ${g.returnCards.mkString(", ")}\nYour hand: ${g.returnPlayers(0).returnHand.mkString(", ")}"
+    }
+
+    def dealerInfo = {
+      val dealer = g.returnPlayers(g.getDealer)
+      updateLog(s"The current dealer is ${dealer.name}")
     }
 
     def startGame = {
@@ -157,15 +242,31 @@ object TextBasedGUI extends SimpleSwingApplication {
       } while (!name.isDefined)
 
       g = new Game(opponents.get.toInt, name.get, new Board, new Deck(0))
+      saveAndQuit.enabled = (true)
+      clearLog
       newWholeGame()
     }
-    
+
     def loadGame = {
       g = ChunkIO.load
       if (g.gameOn) {
-        loadedWholeGame()
+        clearLog
+        loadedWholeGame
       } else {
         updateLog("The saved game was already over!")
+      }
+    }
+
+    def saveQuit = {
+      val res = Dialog.showConfirmation(
+        log,
+        "Are you sure you want to quit?",
+        title = "Save & Quit",
+        optionType = Dialog.Options.YesNo)
+
+      if (res == Dialog.Result.Yes) {
+        ChunkIO.saveGame(g)
+        this.dispose()
       }
     }
 
@@ -176,35 +277,52 @@ object TextBasedGUI extends SimpleSwingApplication {
     //main game loop that ends when atleast one player has 16 or more points
     def newWholeGame() = {
       updateLog("New game started!")
-      while (g.gameOn) {
-        newGame
-        g.changeTurn
-        scores
-      }
-      gameEnd
-    }
-
-    //start a new game (a game is a single deck played through)
-    def newGame() = {
-      updateLog("New round started!")
-      g.setup()
-      g.dealCards()
-      gameRoundLoop
+      newGame
+      playUntilPlayer
     }
 
     def loadedWholeGame() = {
       updateLog("Game loaded!")
       scores
-      gameRoundLoop
-      g.changeTurn
-      scores
+      playUntilPlayer()
+    }
 
-      while (g.gameOn) {
+    //start a new game
+    //sets up the deck, board and players so that a game can be played
+    def newGame(): Unit = {
+      updateLog("New round started!")
+      dealerInfo
+      g.newGame()
+      updateInfo
+    }
+
+    def playUntilPlayer(): Unit = {
+      if (g.gameOn && isRoundOver) newGame
+      if (g.turn != 0) playBots()
+      if (!g.gameOn) gameEnd
+      if (g.gameOn && g.isRoundOver) {
         newGame
-        g.changeTurn
-        scores
+        playUntilPlayer()
       }
-      gameEnd
+    }
+
+    //plays turns until the player in turn is a human player
+    def playBots() = {
+      while (g.turn != 0 && !isRoundOver) {
+        playTurn
+      }
+    }
+
+    def isRoundOver() = {
+      if (g.isRoundOver) {
+        g.roundEnd()
+        updateLog(s"Round over! \n${g.asName(g.last)} was last and clears the board.")
+        scores
+
+        true
+      } else {
+        false
+      }
     }
 
     def gameRoundLoop() = {
@@ -224,6 +342,7 @@ object TextBasedGUI extends SimpleSwingApplication {
         s"The winners are ${winners.map(_.name).mkString(",")}"
       }
       updateLog(out)
+      saveAndQuit.enabled_=(false)
     }
 
     def scores = {
@@ -237,8 +356,8 @@ object TextBasedGUI extends SimpleSwingApplication {
       val in =
         if (turn == 0) { //if turnIndex is 0 == it's a human player
 
-          updateInfo
-          launchPopup(player)
+          //          updateInfo
+          //          launchPopup(player)
           playerInput
 
         } else { //otherwise it's a bot and decides the card without extra info
@@ -285,6 +404,7 @@ object TextBasedGUI extends SimpleSwingApplication {
       g.changeTurn //change turn
 
       ChunkIO.saveGame(g)
+      updateInfo
       //text for card pickup
       val part1 = player.name + " plays: " + card.toText
       val part2 = if (!choice.isEmpty) { ", gets: " + choice.map(_.toString).mkString(", ") } else ""

@@ -34,7 +34,8 @@ abstract class Player(val name: String) {
 
   def playCard(index: Int): Card = hand.remove(index)
 
-  def addCards(in: Buffer[Card]) = hand ++= in
+  def addCard(in: Card) = hand += in
+  def addCards(in: Buffer[Card]) = in.foreach(addCard)
   
   def getPoints: (Int, Int, Int) = {
     val cards = this.emptyPile()

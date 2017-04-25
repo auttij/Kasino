@@ -9,17 +9,20 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
   private val scores = Scores(this, players.size)
   private val rounds = 48 / (players.length * 4) //tells the amount of rounds that will be played
   private var gameOver = false
-  private var turnIndex = 0   //stepper
+  private var turnIndex = 1   //stepper
   private var lastPickup = 0  //most recent keeper
+  private var dealer = 0
   
   def turn = this.turnIndex
+  def getDealer = this.dealer
   def returnPlayers = this.players
-  def returnLastPickup = this.lastPickup
+  def last = this.lastPickup
   def gameOn = !this.gameOver //check if game is still ongoing
   def playerCount = this.players.size
   def roundCount = this.rounds
   def returnCards = this.board.cards
-
+  def humanPlayer = this.players(0)
+  
   //deals 4 cards to all players
   def dealCards() = {
     for (i <- 0 until playerCount) {
@@ -27,9 +30,10 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
     }
   }
   
-  def loadTurnAndLast(turn: Int, last: Int) = {
+  def loadTurnLastDealer(turn: Int, last: Int, dealer: Int) = {
     this.turnIndex = turn
     this.lastPickup = last
+    this.dealer = dealer
   }
   
   def playerCard(in: Int) = players(turn).returnHand(in)
@@ -41,6 +45,7 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
   def playCard(in: Int): Buffer[Buffer[Card]] = {
     val player = players(turnIndex)
     val card = player.playCard(in) //the card that will be played
+    addSingleCard(player)
     val choices = board.playCard(card) //creates choices of what can be picked up
 
     if (choices.isEmpty) { //if nothing can be picked up...
@@ -55,10 +60,20 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
     } else { //if there is a choice that has to be made...
       choices
     }
+    
+  }
+  
+  //adds a single card to a players hand, if the deck is not empty
+  def addSingleCard(player: Player) = {
+    if (!this.deck.isEmpty) player.addCards(deck.deal(1))
   }
 
   def getPlayerScores = {
     scores.scoresWithIndex.map( x => (players(x._1).name, x._2) )
+  }
+  
+  def asName(index: Int) = {
+    players(index).name
   }
   
   //picks up the given cards from the Board
@@ -79,6 +94,11 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
   //changes the player who is currently playing to the next player
   def changeTurn() = turnIndex = (turnIndex + 1) % players.length
   
+  def changeDealer() = {
+    dealer = (dealer + 1) % players.length
+    changeTurn
+  }
+  
   //did the game end? if so gameOver = true
   def didGameEnd() = if (scores.isGameOver) endGame
 
@@ -87,6 +107,12 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
   //the winners of the game
   def winners = scores.getWinners.map(x => players(x))
 
+  def newGame() = {
+    setup
+    dealCards
+  }
+  
+  //sets the board and deck in a playable state for a new game
   def setup() = {
     deck.initialize
     deck.shuffle
@@ -95,15 +121,15 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
 
   def isRoundOver = {
     val handSizes = for (player <- players) yield player.handSize
-    handSizes.min == 0
+    handSizes.max == 0
   }
-  
   
   //when a round ends (deck is empty) collect remaining cards and update points
   def roundEnd() = {
     players(lastPickup).addToPile(board.collectAll)
-    players(lastPickup).addToPile(deck.collectAll)
+    //players(lastPickup).addToPile(deck.collectAll)
     scores.updatePoints
+    changeDealer
     didGameEnd
     ChunkIO.saveGame(this)
   }

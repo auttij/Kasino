@@ -9,7 +9,7 @@ class Deck(seed: Int) {
   private val myRand = if (seed == 0) new Random() else new Random(seed)
 
   //Contains all the cards in the deck; Turn into private when done testing!
-  var cards = Buffer[Card]()
+  private var cards = Buffer[Card]()
 
   //Contains all the suits. Used by initialize to go through all the suits to make a complete deck.
   private val Suits = Vector[Suit](Spades, Diamonds, Clubs, Hearts)
@@ -57,6 +57,8 @@ class Deck(seed: Int) {
     cards.clear
     temp
   }
+  
+  def isEmpty = this.cards.isEmpty
   
   //returns all the cards as text in the deck without changing the actual Buffer storing them.
   def returnCards = this.cards.map(_.toString)

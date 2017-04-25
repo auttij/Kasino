@@ -57,6 +57,7 @@ object ChunkIO {
       var playerName = ""
       var turn = 0
       var lastPickup = 0
+      var dealer = 0
       var endFound = false
       var deckChunk = ""
       var boardChunk = ""
@@ -71,6 +72,7 @@ object ChunkIO {
           case "OPC" => playerCount = handleChunk(chunkHeader).mkString.toInt
           case "NAM" => playerName = handleChunk(chunkHeader).mkString
           case "TRN" => turn = handleChunk(chunkHeader).mkString.toInt
+          case "DLR" => dealer = handleChunk(chunkHeader).mkString.toInt
           case "LST" => lastPickup = handleChunk(chunkHeader).mkString.toInt
           case "DCK" => deckChunk = handleChunk(chunkHeader).mkString
           case "BRD" => boardChunk = handleChunk(chunkHeader).mkString
@@ -125,7 +127,7 @@ object ChunkIO {
         throw new CorruptedSaveFileException("Not enough hands in save data")
       }
 
-      game.loadTurnAndLast(turn, lastPickup)
+      game.loadTurnLastDealer(turn, lastPickup, dealer)
       game.loadScores(scores)
 
       game
@@ -147,9 +149,10 @@ object ChunkIO {
     val opponentCount = players.size.toString
     val playerName = game.playerName
     val turn = game.turn.toString
-    val lastPickup = game.returnLastPickup.toString
+    val lastPickup = game.last.toString
     val deckCards = deck.returnCards.mkString("/")
     val gameOver = if (!game.gameOn) "1" else "0"
+    val dealer = game.getDealer.toString
     //val deckSeed = deck.usedSeed.toString
     //val deckRemaining = deck.remaining.toString
     val boardCards = board.returnCards.mkString("/")
@@ -162,6 +165,7 @@ object ChunkIO {
       ("OPC", opponentCount),
       ("NAM", playerName),
       ("TRN", turn),
+      ("DLR", dealer),
       ("LST", lastPickup),
       ("DCK", deckCards),
       ("BRD", boardCards),

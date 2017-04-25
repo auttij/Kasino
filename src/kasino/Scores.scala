@@ -20,7 +20,7 @@ class Scores (game: Game, count: Int) {
   }
   
   def updatePoints() = {
-    val lastPickup = game.returnLastPickup //apparently lastPickup shouldn't give points like I'm used to...
+    val lastPickup = game.last //apparently lastPickup shouldn't give points like I'm used to...
     val players = game.returnPlayers
     val points = for (i <- players) yield i.getPoints             
     var newPoints = points.map( _._1).toArray  //a list containing all the points for each player gained this round
