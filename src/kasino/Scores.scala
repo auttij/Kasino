@@ -5,7 +5,7 @@ class Scores (game: Game, count: Int) {
   private var scores: Array[Int] = Array.ofDim(count)
   
   //returns the scores of each player
-  def getScores = this.scores
+  def ScoresWithIndex = this.scores.zipWithIndex.map( _.swap)
   
   //returns the indexes of players that won (had the same score)
   def getWinners: Array[Int] = {

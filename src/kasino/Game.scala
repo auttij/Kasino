@@ -82,7 +82,7 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
 
   //returns all players with their scores.
   def getPlayerScores = {
-    scores.getScores.map(x => (asName(x), x))
+    scores.ScoresWithIndex.map(x => (asName(x._1), x._2))
   }
 
   //picks up the given cards from the Board and add them to a players pile.
@@ -141,6 +141,6 @@ class Game(opponents: Int, val playerName: String, val board: Board, val deck: D
     }
   }
 
-  def changeLast = this.lastPickup = turnIndex
+  def changeLast = this.lastPickup = turn
 
 }
