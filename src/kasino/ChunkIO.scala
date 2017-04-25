@@ -109,7 +109,7 @@ object ChunkIO {
       for (hand <- handChunks) {
         if (!hand.isEmpty()) {
           val cards = for (card <- hand.split("/")) yield cardMatch(card)
-          game.returnPlayers(handIndex).addCards(cards.toBuffer)
+          game.getPlayers(handIndex).addCards(cards.toBuffer)
         }
         handIndex += 1
       }
@@ -118,7 +118,7 @@ object ChunkIO {
       for (pile <- pileChunks) {
         if (!pile.isEmpty()) {
           val cards = for (card <- pile.split("/")) yield cardMatch(card)
-          game.returnPlayers(pileIndex).addToPile(cards.toBuffer)
+          game.getPlayers(pileIndex).addToPile(cards.toBuffer)
         }
         pileIndex += 1
       }
@@ -142,7 +142,7 @@ object ChunkIO {
   //data that is saved: opponent count, player name, remaining cards in deck, remaining cards on board,
   //scores for each player, hands of each player, card piles of each player, who's turn it is and who was last pickup
   def saveGame(game: Game) = {
-    val players = game.returnPlayers
+    val players = game.getPlayers
     val deck = game.deck
     val board = game.board
 

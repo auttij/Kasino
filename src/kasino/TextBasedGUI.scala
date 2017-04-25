@@ -161,14 +161,14 @@ object TextBasedGUI extends SimpleSwingApplication {
     //updates the infobox with information about cards on the table and cards in the players hand
     def updateInfo = {
       this.infoBox.text = {
-        s"Cards on the table: ${g.returnCards.mkString(", ")}\n" +
-          s"Your hand: ${g.returnPlayers(0).returnHand.mkString(", ")}"
+        s"Cards on the table: ${g.getCards.mkString(", ")}\n" +
+          s"Your hand: ${g.getPlayers(0).returnHand.mkString(", ")}"
       }
     }
 
     //updates the log with information on who is the current dealer in the game.
     def dealerInfo = {
-      val dealer = g.returnPlayers(g.getDealer)
+      val dealer = g.getPlayers(g.getDealer)
       updateLog(s"The current dealer is ${dealer.name}")
     }
 
@@ -323,7 +323,7 @@ object TextBasedGUI extends SimpleSwingApplication {
     //plays a single turn
     def playTurn() = {
       val turn = g.turn  //whose turn it is
-      val player = g.returnPlayers(turn) //the player in turn
+      val player = g.getPlayers(turn) //the player in turn
       val in =  //input for which card will be played
         if (turn == 0) { //if turnIndex is 0 == it's a human player
           playerInput

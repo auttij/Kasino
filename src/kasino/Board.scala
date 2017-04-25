@@ -5,10 +5,11 @@ import scala.collection.mutable.Buffer
 //represents the game board in a cardgame where cards can be played.
 class Board() {
 
-  var cards = Buffer[Card]() //Contains all the cards in the deck; Turn into private when done testing!
+  //collection containing cards on the board.
+  private var cards = Buffer[Card]()
 
   //clear the board of all cards. Used when resetting the Board state in the beginning of a new game
-  def clear(): Unit = cards.clear
+  private def clear(): Unit = cards.clear
 
   //add a single card to the Board
   private def addCard(c: Card): Unit = cards += c
@@ -71,6 +72,9 @@ class Board() {
     }
   }
 
+  //Takes a list of card combinations and combines them to combinations
+  //that contain all possible cards. If a card is present in two card combinations,
+  //two combinations of combinations will be made, because the card can't be picked up twice.
   private def combineCombinations(in: Buffer[Buffer[Card]]): Buffer[Buffer[Card]] = {
     val out = for (i <- in) yield combineBuffers(i, in)   
     out.map(_.sortWith(_.toString < _.toString)).toSet.toBuffer
