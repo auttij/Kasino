@@ -273,10 +273,17 @@ object TextBasedGUI extends SimpleSwingApplication {
 
     //plays the game automatically until it's the players turn
     def playUntilPlayer(): Unit = {
-      if (g.gameOn && isRoundOver) newGame //if someone hasn't won and no one has cards, start a new game
-      if (g.turn != 0) playBots() //if the player in turn isn't human play until it is or game ends
-      if (!g.gameOn) gameEnd //if someone has won, end the game
-      if (g.gameOn && g.isRoundOver) { //if a round has ended but no one has won
+      //if someone hasn't won and no one has cards, start a new game
+      if (g.gameOn && isRoundOver) newGame //checking is round over also triggers round ending if it was over
+      
+      //if the player in turn isn't human, play until it is, or until the game ends
+      if (g.turn != 0) playBots() 
+      
+      //if someone has won, end the game
+      if (!g.gameOn) gameEnd
+      
+      //if a round has ended but no one has won
+      if (g.gameOn && g.isRoundOver) { 
         newGame //start a new game
         playUntilPlayer() //and play until it's the players turn
       }
