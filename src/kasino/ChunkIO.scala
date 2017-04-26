@@ -24,6 +24,11 @@ object ChunkIO {
         val saveExc = new CorruptedSaveFileException("Corrupted Save data, couldn't be decrypted.")
         saveExc.initCause(e)
         throw saveExc
+        
+      case e: java.io.FileNotFoundException =>
+        val saveExc = new CorruptedSaveFileException("Save data doesn't exist.")
+        saveExc.initCause(e)
+        throw saveExc
     }
   }
 
@@ -271,4 +276,6 @@ object Helpers {
 
 }
 
+//An exception used when the loaded save data doesn't work properly.
 class CorruptedSaveFileException(message: String) extends Exception(message)
+
