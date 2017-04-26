@@ -58,7 +58,6 @@ object TextBasedGUI extends SimpleSwingApplication {
     this.reactions += {
       case keyEvent: KeyPressed =>
         if (keyEvent.source == this.input && keyEvent.key == Key.Enter && this.g.gameOn) {
-
           val command = this.input.text.trim
           if (command.nonEmpty) { //if something was written in the text area
 
@@ -73,9 +72,8 @@ object TextBasedGUI extends SimpleSwingApplication {
                 playUntilPlayer() //plays the game until it's the players turn again
               }
             }
-
-            this.input.text = "" //clear the text area
           }
+          this.input.text = "" //clear the text area
         }
     }
 
@@ -152,7 +150,7 @@ object TextBasedGUI extends SimpleSwingApplication {
 
     //prints out the given string to the log text area
     def updateLog(in: String) = {
-      if (g.turn == 1) {
+      if (g.turn == 1 && g.gameOn) {
         clearLog
       }
       log.text += in + "\n"
@@ -274,16 +272,16 @@ object TextBasedGUI extends SimpleSwingApplication {
     //plays the game automatically until it's the players turn
     def playUntilPlayer(): Unit = {
       //if someone hasn't won and no one has cards, start a new game
-      if (g.gameOn && isRoundOver) newGame //checking is round over also triggers round ending if it was over
-      
+      if (isRoundOver && g.gameOn) newGame //checking is round over also triggers round ending if it was over
+
       //if the player in turn isn't human, play until it is, or until the game ends
-      if (g.turn != 0) playBots() 
-      
+      if (g.turn != 0) playBots()
+
       //if someone has won, end the game
       if (!g.gameOn) gameEnd
-      
+
       //if a round has ended but no one has won
-      if (g.gameOn && g.isRoundOver) { 
+      if (g.isRoundOver && g.gameOn) {
         newGame //start a new game
         playUntilPlayer() //and play until it's the players turn
       }
@@ -291,7 +289,7 @@ object TextBasedGUI extends SimpleSwingApplication {
 
     //plays turns until the player in turn is a human player
     def playBots() = {
-      while (g.turn != 0 && !isRoundOver) {
+      while (!isRoundOver && g.turn != 0) {
         playTurn
       }
     }
@@ -314,6 +312,9 @@ object TextBasedGUI extends SimpleSwingApplication {
     //once the game has ended, this method gets called
     //prints out the winner or winners
     def gameEnd() = {
+      clearLog()
+      updateLog("Game Over!")
+      scores
       val winners = g.winners
       val out = if (winners.length == 1) {
         s"The winner is ${winners(0).name}!"
