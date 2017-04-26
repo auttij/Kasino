@@ -22,7 +22,10 @@ abstract class Player(val name: String) {
   //returns the contents of the players pile, as strings. Used when saving
   def returnPile = this.pile.map( _.toString)
 
+  //decide a card that will be play from the players hand  
   def decideCard: Int
+  
+  //decides a combination of cards that the player wants to pick up after they have played a card.
   def decideSelection(in: Buffer[Buffer[Card]]): Int
   
   //add cards to the players pile
@@ -38,11 +41,20 @@ abstract class Player(val name: String) {
     temp
   }
 
+  //plays a card with the given index from the players hand.
   def playCard(index: Int): Card = hand.remove(index)
 
+  //Adds a single card to the players hand
   def addCard(in: Card) = hand += in
+  
+  //Adds a collection of  cards to the players hand
   def addCards(in: Buffer[Card]) = in.foreach(addCard)
   
+  //clears the players Pile and calculates values based on its contents,
+  //calcultaed values are returned as a 3-Int tuple. The values are as follows:
+  //The sum of points of the cards in the pile (each ace would grow this number by 1 and so on)
+  //The amount of spades, that the player has collected.
+  //The amount of cards, that the player has collected.
   def getPoints: (Int, Int, Int) = {
     val cards = this.emptyPile()
     val points = cards.map( _.pointValue).sum
@@ -53,22 +65,27 @@ abstract class Player(val name: String) {
   
 }
 
+//this sub-class should probably be removed and integrated to the regular player class.
 class HumanPlayer(name: String) extends Player(name) {
     def decideCard = new Random().nextInt(this.handSize)  //never actually used
     def decideSelection(in: Buffer[Buffer[Card]]) = new Random().nextInt(in.size) //never actually used
 }
 
+//represents a bot player in the game.
 class Bot(name: String) extends Player(name) {
-    val rand = new Random()
-    def decideCard = new Random().nextInt(this.handSize)
+    private val rand = new Random()
+    //chooses which card to play.
+    //currently selects a random card.
+    def decideCard = new Random().nextInt(this.handSize) 
     
-    def decideSelection(in: Buffer[Buffer[Card]]) = {
+    //when given multiple choices that the Bot can choose from, select which one to play
+    def decideSelection(in: Buffer[Buffer[Card]]) = {  //Currently chooses the one with most points in it.
       in.zipWithIndex.maxBy( _._1.map( _.pointValue).sum )._2
     }
 }
 
 object Bot {
-  val names: Buffer[String] =
+  val names: Buffer[String] =  //Names for each bot player
     Buffer(
       "Kasa Bot",
       "Kyösti Bot",
