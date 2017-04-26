@@ -3,7 +3,7 @@ package kasino
 import scala.collection.mutable.Buffer
 
 //represents the game board in a cardgame where cards can be played.
-class Board() {
+class Board {
 
   //collection containing cards on the board.
   private var cards = Buffer[Card]()

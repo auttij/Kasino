@@ -55,7 +55,7 @@ abstract class Player(val name: String) {
   //The sum of points of the cards in the pile (each ace would grow this number by 1 and so on)
   //The amount of spades, that the player has collected.
   //The amount of cards, that the player has collected.
-  def getPoints: (Int, Int, Int) = {
+  def getPoints(): (Int, Int, Int) = {
     val cards = this.emptyPile()
     val points = cards.map( _.pointValue).sum
     val spadesCount = cards.filter( _.suit ==  Spades ).length
