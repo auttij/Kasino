@@ -15,7 +15,7 @@ class Deck(seed: Int) {
   def isEmpty = this.cards.isEmpty
 
   //Contains all the suits. Used by initialize to go through all the suits to make a complete deck.
-  private val Suits = Vector[Suit](Spades, Diamonds, Clubs, Hearts)
+  private val suits = Vector[Suit](Spades, Diamonds, Clubs, Hearts)
   
   //adds a card to the cards collection
   private def addCard(value: Int, Suit: Suit) = {
@@ -30,9 +30,9 @@ class Deck(seed: Int) {
   def initialize() = {
     cards.clear
 
-    for (s <- Suits.indices) { //go through suits
+    for (s <- suits.indices) { //go through suits
       for (v <- 1 to 13) { //go through all values 1-13
-        addCard(v, Suits(s)) //add card
+        addCard(v, suits(s)) //add card
       }
     }
   }
