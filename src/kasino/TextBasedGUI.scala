@@ -348,7 +348,7 @@ object TextBasedGUI extends SimpleSwingApplication {
         } else { //if there is a choice that has to be made...
           val selection = if (turn == 0) { //ask the player which cards they want
 
-            val text = s"choices:\n" + choices.map(_.map(_.toString).mkString(",")).mkString("\n") + s"\nChoose an ingeger in between 0 - ${choices.size - 1}"
+            val text = s"choices:\n" + choices.map(_.map(_.toString).mkString(",")).mkString("\n") + s"\nChoose an integer between 0 - ${choices.size - 1}"
             var ok = true
             var output: Option[String] = None
             do {
